@@ -1,0 +1,35 @@
+#ifndef MAIN_HPP
+#define MAIN_HPP
+
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <stdio.h>
+#include <sstream>
+#include <vector>
+#include <string>
+
+
+//Longest file name supported
+#define FILE_NAME_MAX_LEN 63
+
+//Forward declarations
+class SafeFile;
+
+//For simplicity
+typedef unsigned int uint;
+typedef std::vector<char> data;
+
+//Get 'name' of thread / process
+std::string me();
+
+//Used for error checking
+void * safeMalloc(int s);
+void Err(const char * s);
+void Assert(bool b, const char * s);
+
+#endif

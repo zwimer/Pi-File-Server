@@ -39,7 +39,6 @@ user's files (what this is all about)
 	hidden or not at users request
 	total size limit
 	size limit
-	immutable
 
 cmds
 	cmds, fetch, send, login, create_user, create rsa, hide, unhide
