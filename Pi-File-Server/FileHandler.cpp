@@ -13,6 +13,7 @@ const std::string FileHandler::userFile = "userFile";
 
 //Create static variables 
 int FileHandler::pipe[2];
+bool FileHandler::setup = true;
 std::map<const std::string, SafeFile*> FileHandler::fileList;
 
 
@@ -25,16 +26,18 @@ std::map<const std::string, SafeFile*> FileHandler::fileList;
 //and creates any necessary files that don't.
 FileHandler::FileHandler() {
 
-	//Initalize pipe to -1, -1
-	pipe[0] = -1; pipe[1] = -1;
+	//Initalize pipe to itself
+    Assert(!::pipe(pipe), "pipe() failed");
 
 	//Create required server files
 	fileList[logFile] = new SafeFile(logFile);
 	fileList[infoFile] = new SafeFile(infoFile);
 	fileList[userFile] = new SafeFile(userFile);
 
-	log("SCANNING FOR OTHER FILES TO BE IMPLEMENTED");
-
+    //Start a newChild for the master process, this marks setup as false
+    pthread_t tid; pthread_create(&tid, NULL, newChild, pipe);
+    
+    
 }
 
 
@@ -43,8 +46,6 @@ FileHandler::FileHandler() {
 
 //Define the pipe to the parent
 void FileHandler::setParent(int n[]) {
-	Assert(pipe[0] == -1 && pipe[1] == -1,
-		"setParent() called incorrectly.");
 	pipe[0] = n[0]; pipe[1] = n[1];
 }
 
@@ -64,17 +65,18 @@ void * FileHandler::newChild(void * arg) {
 	const int * childPipe = (int*) arg;
 	PipePacket *p2, *p = (PipePacket*) safeMalloc(size);
 
-	//While the pipe is open, take requests
-	Synchronized::log("New listener thread created and waiting");
-	while( ( n = ::read(childPipe[0], p, size) ) ) {
+    //Log this thread's creation
+	if (!setup) Synchronized::log("New listener thread created and waiting");
+    else setup = false;
+    
+    //While the pipe is open, take requests
+    for(p2 = NULL; ( n = (int)::read(childPipe[0], p, size) ); p2 = NULL ) {
 
 		//Check what was recieved and log it
 		Assert(n==size, "Master process recieved invalid PipePacket size");
-		std::stringstream ss, s2; ss << "Recieved "
-;
-ss  << (PipePacket)*p;
-		Synchronized::log(ss.str());
-
+		std::stringstream ss, s2; ss << "Recieved "  << (PipePacket)*p;
+        if (p->getName() != logFile) Synchronized::log(ss.str());
+        
 		//Check usage
 		if (fileList.find(p->getName()) == fileList.end() && p->type == READ_REQUEST) {
 
@@ -96,15 +98,25 @@ ss  << (PipePacket)*p;
 
 			//Create the packet to send back
 			if (p->type == WRITE_REQUEST)
-				p2 = new PipePacket(WRITE_ACCESS_GRANTED, p->getWho(), p->getName());
+				p2 = new PipePacket(WRITE_ACCESS_GRANTED, p->getWho(), p->getName(), fileList[p->getName()]);
 			else if (p->type == READ_REQUEST)
-				p2 = new PipePacket(READ_ACCESS_GRANTED, p->getWho(), p->getName());
+				p2 = new PipePacket(READ_ACCESS_GRANTED, p->getWho(), p->getName(), fileList[p->getName()]);
 		}
 
-		//Inform child process access has been granted, and log it
+		//Inform child process access has been granted
+        Assert(p2, "invalid PipePacket recieved.");
 		Assert( ::write(childPipe[1], p2, sizeof(PipePacket) ),
 			"full PipePacket faield to send" );
-		s2 << "Sent " << *p2; Synchronized::log(s2.str());
+
+        sleep(2);
+        
+        //Log the action if needed
+        if (p->getName() != logFile) {
+            s2 << "Sent " << *p2;
+            Synchronized::log(s2.str());
+        }
+        
+        //Prevent leaks
 		delete p2;
 	}
 
@@ -112,7 +124,7 @@ ss  << (PipePacket)*p;
 	Synchronized::log("This listener thread now dead");
 
 	//Prevent leaks and return
-	free(p); delete[] arg; return NULL;
+	free(p); delete[] (int*)arg; return NULL;
 }
 
 
@@ -126,13 +138,13 @@ SafeFile * FileHandler::getAccess(const PP_Type req, const PP_Type responce, con
 	PipePacket * p = new PipePacket(req, me().c_str(), s.c_str());
 	if (::write(pipe[1], p, sizeof(PipePacket)) != sizeof(PipePacket))
 		Err("full PipePacket failed to send");
-
+    sleep(1);
 	//Block until packet is recieved in return
 	if (::read(pipe[0], p, sizeof(PipePacket)) != sizeof(PipePacket))
 		Err("full PipePacket was not recieved");
 	
 	//Verify contents
-	if (p->type != READ_ACCESS_GRANTED || p->getWho() != me() || p->getName() != s) {
+	if (p->type != responce || p->getWho() != me() || p->getName() != s) {
 		std::stringstream s; s << "getAccess recieved " << *p;
 		Err(s.str().c_str());
 	}
@@ -178,9 +190,9 @@ inline void writeFn(const std::string& s, const char * d, int n) {
 
 //Public wrappers to writeFn
 void FileHandler::write(const std::string& s, const data& d) {
-	writeFn( s, (char*) &d[0], d.size() );
+	writeFn( s, (char*) &d[0], (int)d.size() );
 }
 void FileHandler::write(const std::string& s, const std::string d) {
-	writeFn( s, (char*) &d[0], d.size() );
+	writeFn( s, (char*) &d[0], (int)d.size() );
 }
 

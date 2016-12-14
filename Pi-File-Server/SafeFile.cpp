@@ -1,10 +1,11 @@
 #include "SafeFile.hpp"
 
+
 //Constructor
 SafeFile::SafeFile(const std::string s, const std::string& who) : name(s.c_str()) {
 	writing = PTHREAD_MUTEX_INITIALIZER;
 	whoM = PTHREAD_MUTEX_INITIALIZER;
-	getWriteAccess(who);
+	if (who != "") getWriteAccess(who);
 }
 
 //Destructor
@@ -18,7 +19,7 @@ SafeFile::~SafeFile() {}
 void SafeFile::getReadAccess(const std::string& who) {
 
 	//Block if another thread is writing
-	pthread_mutex_lock(&writing);
+    pthread_mutex_lock(&writing);
 
 	//And who to the readers list
 	pthread_mutex_lock(&whoM);
@@ -32,8 +33,8 @@ void SafeFile::getReadAccess(const std::string& who) {
 //Get permission to read, this functions blocks
 void SafeFile::getWriteAccess(const std::string& who) {
 
-	//Get the writing lock
-	pthread_mutex_lock(&writing);
+    //Get the writing lock
+    pthread_mutex_lock(&writing);
 	
 	//Wait until there are no writers
 	while(users.size()) sleep(.001);
@@ -59,7 +60,7 @@ void SafeFile::finishReading(const std::string& who) {
 void SafeFile::finishWriting(const std::string& who) {
 
 	//Check for errors
-	Assert(!pthread_mutex_trylock(&writing),
+	Assert(pthread_mutex_trylock(&writing),
 		"finishWriting was called when nothing was writing.");
 	Assert(users.size()==1, "finishWriting called, users was the wrong size.");
 	Assert(*users.begin() == who, "finishWriting called by wrong thread.");

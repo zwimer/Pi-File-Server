@@ -43,6 +43,6 @@ void Synchronized::log(const std::string& s) {
 	ss << me() << s << ((s[s.size()-1] == '\n') ? "":"\n");
 
 	//Log the string
-	FileHandler::write(FileHandler::logFile, s); 
+	FileHandler::write(FileHandler::logFile, ss.str());
 }
 

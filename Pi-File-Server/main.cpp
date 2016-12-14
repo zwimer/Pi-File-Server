@@ -24,7 +24,7 @@ void * safeMalloc(int s) {
 //A function used if an assert fails
 void Err(const char *s) {
     std::cout << "Error " << s << std::endl;
-    perror("Perror: "); exit(EXIT_FAILURE);
+    perror("Perror"); exit(EXIT_FAILURE);
 }
 
 //A function used to test assertions
@@ -85,7 +85,7 @@ int main(int argc, const char * argv[]) {
     Assert(bind(sd,(struct sockaddr*)&svr,sizeof(svr))>= 0, "bind() failed");
     listen( sd, 5 ); 
 
-    //Listen to 5 connections and note so
+    //Note that the server is now up
 	log(std::string("Master server started; listening on port: " + std::to_string(port)));
 
 	//Loop

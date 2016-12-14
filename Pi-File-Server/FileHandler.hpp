@@ -79,6 +79,9 @@ private:
 	//This stays the same across threads
 	//But changes depending on the process
 	static int pipe[2];
+    
+    //True before constructor has been called
+    static bool setup;
 };
 
 #endif
