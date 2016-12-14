@@ -1,0 +1,3 @@
+Currently a few sleeps are in the program to ensure reading and writing work
+	To fix this, implement a dual piping system so the child doesn't accidentally read the data it send to the parent while waiting for a response.
+
