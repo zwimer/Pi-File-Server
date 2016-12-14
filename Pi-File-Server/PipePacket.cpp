@@ -2,10 +2,6 @@
 
 #include <string.h>
 
-//For readability
-using namespace std;
-
-
 //PipePacket Constructor
 PipePacket::PipePacket(PP_Type typ, const char * w, const char * f, SafeFile * s)
 : type(typ), file(s) { strncpy(who, w, WHO_ARR_SIZE); strncpy(name, f, FILE_ARR_SIZE); }
@@ -15,10 +11,10 @@ const char * PipePacket::getWho() const { return who; }
 const char * PipePacket::getName() const { return name; }
 
 //Overload the stream operator
-ostream& operator << (ostream& s, const PipePacket& p) {
+std::ostream& operator << (std::ostream& s, const PipePacket& p) {
 
 	//Determine create pieces of string to add
-	string tmp, tmp2 = p.getWho(); tmp2.pop_back(); tmp = "Other";
+	std::string tmp, tmp2 = p.getWho(); tmp2.pop_back(); tmp = "Other";
 	if (p.type == READ_REQUEST)					 tmp = "Read request";
 	else if (p.type == WRITE_REQUEST)			 tmp = "Write request";
 	else if (p.type == FINISH_READ)				 tmp = "Finish read";

@@ -68,8 +68,8 @@ public:
 
 	//Required server files
 	static const std::string logFile;
-	static const std::string fileInfo;
-	static const std::string userList;
+	static const std::string infoFile;
+	static const std::string userFile;
 
 private:
 

@@ -44,6 +44,5 @@ void Synchronized::log(const std::string& s) {
 
 	//Log the string
 	FileHandler::write(FileHandler::logFile, s); 
-	FileHandler::finishWriting(FileHandler::logFile); 
 }
 

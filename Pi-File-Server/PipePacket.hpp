@@ -43,4 +43,7 @@ private:
 	char name[FILE_ARR_SIZE];
 };
 
+//Stream operator
+std::ostream& operator << (std::ostream& s, const PipePacket& p);
+
 #endif

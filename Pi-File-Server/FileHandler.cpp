@@ -8,8 +8,12 @@ using namespace Synchronized;
 
 //Define needed server files
 const std::string FileHandler::logFile = "logFile";
-const std::string FileHandler::fileInfo = "fileInfo";
-const std::string FileHandler::userList = "userList";
+const std::string FileHandler::infoFile = "infoFile";
+const std::string FileHandler::userFile = "userFile";
+
+//Create static variables 
+int FileHandler::pipe[2];
+std::map<const std::string, SafeFile*> FileHandler::fileList;
 
 
 //-----------------------------------Setup----------------------------------
@@ -26,8 +30,8 @@ FileHandler::FileHandler() {
 
 	//Create required server files
 	fileList[logFile] = new SafeFile(logFile);
-	fileList[fileInfo] = new SafeFile(fileInfo);
-	fileList[userList] = new SafeFile(userList);
+	fileList[infoFile] = new SafeFile(infoFile);
+	fileList[userFile] = new SafeFile(userFile);
 
 	log("SCANNING FOR OTHER FILES TO BE IMPLEMENTED");
 
@@ -121,15 +125,15 @@ SafeFile * FileHandler::getAccess(const PP_Type req, const PP_Type responce, con
 	//Make and send a PipePacket to request access
 	PipePacket * p = new PipePacket(req, me().c_str(), s.c_str());
 	if (::write(pipe[1], p, sizeof(PipePacket)) != sizeof(PipePacket))
-		Err("Error, full PipePacket failed to send");
+		Err("full PipePacket failed to send");
 
 	//Block until packet is recieved in return
 	if (::read(pipe[0], p, sizeof(PipePacket)) != sizeof(PipePacket))
-		Err("Error, full PipePacket was not recieved");
+		Err("full PipePacket was not recieved");
 	
 	//Verify contents
 	if (p->type != READ_ACCESS_GRANTED || p->getWho() != me() || p->getName() != s) {
-		std::stringstream s; s << "Error, getAccess recieved " << *p;
+		std::stringstream s; s << "getAccess recieved " << *p;
 		Err(s.str().c_str());
 	}
 
