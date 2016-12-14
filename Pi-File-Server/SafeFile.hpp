@@ -12,7 +12,7 @@ class SafeFile {
 	//Constructor
 	//Who has write access to start
 	SafeFile() = delete;
-	SafeFile(const char * n, const std::string& who);
+	SafeFile(const char * n, const std::string& who = std::string(""));
 
 	//Destructor
 	~SafeFile();

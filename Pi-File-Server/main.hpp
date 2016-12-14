@@ -1,6 +1,8 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
+#include "Synchronized.hpp"
+
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -11,7 +13,6 @@
 #include <stdio.h>
 #include <sstream>
 #include <vector>
-#include <string>
 
 
 //Longest file name supported
@@ -28,7 +29,7 @@ typedef unsigned int uint;
 typedef std::vector<char> data;
 
 //Get 'name' of thread / process
-std::string me();
+std::string me(const std::string s = "");
 
 //Common functions
 int min(int a, int b);

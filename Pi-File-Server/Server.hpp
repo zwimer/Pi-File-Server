@@ -1,9 +1,11 @@
-#include "main.hpp"
+#ifndef SERVER_HPP
+#define SERVER_HPP
 
+#include "main.hpp"
 
 //A server that will handle
 //all requests made on fd sock
-class Sever {
+class Server {
 public:
 
 	//Constructor
@@ -24,3 +26,5 @@ private:
 	//Static constants for this class
 	static const int BUFFER_SIZE;
 };
+
+#endif

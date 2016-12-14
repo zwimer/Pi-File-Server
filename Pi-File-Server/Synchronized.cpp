@@ -13,8 +13,8 @@ int Synchronized::smartFork() {
 	
 	//Create the pipe and fork
  	Assert(!pipe(arr), "pipe() failed");
-	Assert((rt = fork()) != -1, "fork() failed");
-	ret = rt ? PARENT : CHILD;
+	Assert((ret = fork()) != -1, "fork() failed");
+	ret = ret ? PARENT : CHILD;
 
 	//If parent
 	if ( ret == PARENT ) {
@@ -23,7 +23,7 @@ int Synchronized::smartFork() {
 	}
 	
 	//If child
-	else FileHandler::setParent(arr[1]);
+	else FileHandler::setParent(arr);
 
 	//Return
 	return ret; 

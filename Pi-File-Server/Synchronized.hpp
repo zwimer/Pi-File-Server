@@ -1,10 +1,7 @@
 #ifndef SYNCHRONIZED_HPP
 #define SYNCHRONIZED_HPP
 
-#include "main.hpp"
-
-#include <vector>
-#include <set>
+#include <string>
 
 //To protect the global namespace
 namespace Synchronized {
@@ -15,12 +12,10 @@ namespace Synchronized {
 
 	//Used to log an action
 	void log(const char * s);
-	void log(const std::string s);
+	void log(const std::string& s);
 
 	//Values that smartFork can return
 	extern const int CHILD, PARENT;
 }
-
-
 
 #endif

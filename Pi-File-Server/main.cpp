@@ -1,8 +1,8 @@
 #include "FileHandler.hpp"
-#include "main.hpp"
+#include "Server.hpp"
 
 #include <iostream>
-#include <signal>
+#include <signal.h>
 #include <map>
 
 //For clarity
@@ -23,9 +23,8 @@ void * safeMalloc(int s) {
 
 //A function used if an assert fails
 void Err(const char *s) {
-    std::cout << "Error at t = " << t.getTime() << ": " << s << std::endl;
-    perror("Perror");
-    exit(EXIT_FAILURE);
+    std::cout << "Error " << s << std::endl;
+    perror("Perror: "); exit(EXIT_FAILURE);
 }
 
 //A function used to test assertions
@@ -37,10 +36,10 @@ void Assert(bool b, const char *s) { if (!b) Err(s); }
 //If a non-empty argument is given, remember that
 //this thread should return s next time me is called
 //Each thread may only call me with an argument once!
-std::string me(const std::string s = "") {
+std::string me(const std::string s) {
 
 	//Memory
-	static std::map<const std::string, const std::string> mem;
+	static std::map<std::string, std::string> mem;
 
 	//If an argument was passed, remeber what was requested
 	if (s != "") mem[me()] = std::string("[ ") + s + std::string(" ] ");
@@ -48,10 +47,10 @@ std::string me(const std::string s = "") {
 	//Create me
 	std::stringstream ss;
 	ss << "[ Process: " << getpid() << ", thread: ";
-	ss << (unsigned int) pthread_self() << " ] ";
+	ss << pthread_self() << " ] ";
 
 	//Return the name of this thread if there is one
-	if (mem.find(ss.str()) != mem.end()) return mem.find(ss.str());
+	if (mem.find(ss.str()) != mem.end()) return mem[ss.str()];
 
 	//Otherwise just return this thread's me
 	return std::move(ss.str());
@@ -72,9 +71,9 @@ int main(int argc, const char * argv[]) {
 	signal(SIGCHLD, SIG_IGN);
 
 	//Local variables
-    int sd, cLen = sizeof(client);
-    unsigned short port = argv[1];
+    unsigned short port = atoi(argv[1]);
 	struct sockaddr_in svr, client;
+    int sd, cLen = sizeof(client);
 
     //Define the server
     svr.sin_family = PF_INET;
@@ -102,7 +101,7 @@ int main(int argc, const char * argv[]) {
 		//Create forks and threads as needed
 		//Have the child start a new server
 		if (smartFork() == CHILD) {
-			(new Server(sock))->start();
+			Server(sock).start();
 			exit(EXIT_SUCCESS);	
 		}
     }

@@ -8,7 +8,7 @@ SafeFile::SafeFile(const char * n, const std::string& who) : name(n) {
 }
 
 //Destructor
-~SafeFile::SafeFile() {}
+SafeFile::~SafeFile() {}
 
 
 //----------------------Synchronized----------------------

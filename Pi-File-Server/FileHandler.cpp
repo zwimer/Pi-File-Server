@@ -1,37 +1,10 @@
-#include "Synchronized.hpp"
-
-//Initalize pipe to -1, -1
-FileHandler::pipe[0] = -1;
-FileHandler::pipe[1] = -1;
+#include "FileHandler.hpp"
+#include "SafeFile.hpp"
 
 //Define needed server files
 const std::string FileHandler::logFile = "logFile";
 const std::string FileHandler::fileInfo = "fileInfo";
 const std::string FileHandler::userList = "userList";
-
-
-//PipePacket Constructor
-PipePacket::PipePacket(PP_type typ, const char * w, const char * n)
- : type(typ), who(w), file(n) {}
-
-//Overload the stream operator
-std::ostream& operator << (std::ostream& s, const PipePacket& p) {
-
-	//Determine create pieces of string to add
-	std::string tmp2 = p.who; tmp2.pop_back(),	tmp = "Other";
-	if (p.type == READ_REQUEST)					tmp = "Read request";
-	else if (p.type == WRITE_REQUEST)			tmp = "Write request";
-	else if (p.type == FINISH_READ)				tmp = "Finish read";
-	else if (p.type == FINISH_WRITE)			tmp = "Finish write";
-	else if (p.type == READ_ACCESS_GRANTED)		tmp = "Read Access Granted";
-	else if (p.type == WRITE_ACCESS_GRANTED)	tmp = "Write Access Granted";
-	else if (p.type == ERROR_FILE_DNE)			tmp = "Error File DNE";
-
-	//Write to the stream and return it
-	s << "PipePacket( " << tmp << ", ";
-	s << tmp2 << ", " << p.file << " )";
-	return s;
-}
 
 
 //-----------------------------------Setup----------------------------------
@@ -41,7 +14,10 @@ std::ostream& operator << (std::ostream& s, const PipePacket& p) {
 //It only exists to force initalization This function
 //scans for files that exist, notes which exist, 
 //and creates any necessary files that don't.
-FileHandler() {
+FileHandler::FileHandler() {
+
+	//Initalize pipe to -1, -1
+	pipe[0] = -1; pipe[1] = -1;
 
 	//Create required server files
 	fileList[logFile] = new SafeFile(logFile);
