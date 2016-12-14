@@ -3,6 +3,13 @@
 
 #include "main.hpp"
 
+//Define sizes
+#define WHO_ARR_SIZE 64
+#define FILE_ARR_SIZE (FILE_NAME_MAX_LEN + 1)
+
+//Forward declearations
+class SafeFile;
+
 //Different types of PipePackets
 typedef enum __PP_Type { 
 	READ_REQUEST, WRITE_REQUEST, FINISH_READ, 
@@ -10,9 +17,6 @@ typedef enum __PP_Type {
 	WRITE_ACCESS_GRANTED, ERROR_FILE_DNE
 } PP_Type;
 
-//Meant to ensure const-ness of arrays and to prevent redirection of arrays 
-class fileArr { public: fileArr(const char *); char file[size] static const int size; }
-class whoArr { public: whoArr(const char *); char who[size]; static const int size; }
 
 //What will be sent through the pipes
 class PipePacket {
@@ -20,12 +24,23 @@ public:
 
 	//Constructor
 	PipePacket() = delete;
-	PipePacket(PP_Type typ, const char * w, const char * n);
+	PipePacket(PP_Type typ, const char * w, const char * n, SafeFile * = NULL);
+
+	//Type of PipePacket
+	const PP_Type type;
+
+	//Getters
+	const char * getWho() const;
+	const char * getName() const;
 
 	//Representation
-	const PP_Type type;
-	const fileArr file;
-	const whoArr who;
+	SafeFile * file;
+
+private:
+
+	//Representation
+	char who[WHO_ARR_SIZE];
+	char name[FILE_ARR_SIZE];
 };
 
 #endif

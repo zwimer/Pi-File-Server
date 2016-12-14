@@ -54,6 +54,9 @@ public:
 
 	//-----Blocking functions called by child processes-----
 
+	//Requests req access, and verifies responce was returned
+	static SafeFile * getAccess(PP_Type, PP_Type, const std::string&);
+
 	//Read data from a file
 	static const data read(const std::string& s);
 
@@ -69,9 +72,6 @@ public:
 	static const std::string userList;
 
 private:
-
-	//Requests req access, and verifies responce was returned
-	static void getAccess(PP_Type req, PP_Type responce);
 
 	//List of all safe files
 	static std::map<const std::string, SafeFile*> fileList;
