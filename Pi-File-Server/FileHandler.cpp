@@ -1,99 +1,195 @@
 #include "Synchronized.hpp"
 
-
 //Initalize pipe to -1, -1
 FileHandler::pipe[0] = -1;
 FileHandler::pipe[1] = -1;
 
-//Define types of PipePackets
-const int PipePacket::READ = 0; 
-const int PipePacket::WRITE = 1; 
-const int PipePacket::FINISH_READ = 2; 
-const int PipePacket::FINISH_WRITE = 3; 
-
 //Define needed server files
 const std::string FileHandler::logFile = "logFile";
-const std::string FileHandler::fileList = "fileList";
+const std::string FileHandler::fileInfo = "fileInfo";
 const std::string FileHandler::userList = "userList";
 
 
 //PipePacket Constructor
-PipePacket(int typ, const char * w, const char * n)
+PipePacket::PipePacket(PP_type typ, const char * w, const char * n)
  : type(typ), who(w), file(n) {}
 
 //Overload the stream operator
 std::ostream& operator << (std::ostream& s, const PipePacket& p) {
-	std::string tmp = p.who; tmp.pop_back();
-	s << "PipePacket( " << (p.type==PipePacket::READ?"Read":"Write");
-	s << ", " << tmp << ", " << p.file << " )";
+
+	//Determine create pieces of string to add
+	std::string tmp2 = p.who; tmp2.pop_back(),	tmp = "Other";
+	if (p.type == READ_REQUEST)					tmp = "Read request";
+	else if (p.type == WRITE_REQUEST)			tmp = "Write request";
+	else if (p.type == FINISH_READ)				tmp = "Finish read";
+	else if (p.type == FINISH_WRITE)			tmp = "Finish write";
+	else if (p.type == READ_ACCESS_GRANTED)		tmp = "Read Access Granted";
+	else if (p.type == WRITE_ACCESS_GRANTED)	tmp = "Write Access Granted";
+	else if (p.type == ERROR_FILE_DNE)			tmp = "Error File DNE";
+
+	//Write to the stream and return it
+	s << "PipePacket( " << tmp << ", ";
+	s << tmp2 << ", " << p.file << " )";
+	return s;
 }
 
-//-----------------------------Setup----------------------------
+
+//-----------------------------------Setup----------------------------------
 
 
 //The Constructor. This is the only non-static item. 
 //It only exists to force initalization This function
 //scans for files that exist, notes which exist, 
 //and creates any necessary files that don't.
-FileHandler();
+FileHandler() {
 
-//Child: Define the pipe to write to
+	//Create required server files
+	fileList[logFile] = new SafeFile(logFile);
+	fileList[fileInfo] = new SafeFile(fileInfo);
+	fileList[userList] = new SafeFile(userList);
+
+	log("SCANNING FOR OTHER FILES TO BE IMPLEMENTED");
+
+}
+
+
+//------------------------------Called by child------------------------------
+
+
+//Define the pipe to the parent
 static void FileHandler::setParent(int n[]) {
 	Assert(pipe[0] == -1 && pipe[1] == -1,
 		"setParent() called incorrectly.");
 	pipe[0] = n[0]; pipe[1] = n[1];
 }
 
-//Parent: Starts a new thread whose job
-//it is to listen to the child process
-static void * FileHandler::newChild(void * n) {
+
+//-----------------------------Called by parent-----------------------------
+
+
+//Start a new thread that listens 
+//to the pipe sent through as the argument 
+static void * FileHandler::newChild(void * arg) {
 
 	//Detach thread
 	pthread_detach(pthread_self());
 
 	//Local variables
 	int n, size = sizeof(PipePacket);
-	PipePacket * p = safeMalloc(size);
+	const int * childPipe = (int*) arg;
+	PipePacket *p2, *p = safeMalloc(size);
 
 	//While the pipe is open, take requests
 	Synchronized::log("New listener thread created and waiting");
-	while( ( n = read(pipe[0], p, size) ) ) {
+	while( ( n = read(childPipe[0], p, size) ) ) {
 
 		//Check what was recieved and log it
 		Assert(n==size, "Master process recieved invalid PipePacket size");
-		std::stringstream ss; ss << "Recieved " << *p;
+		std::stringstream ss, s2; ss << "Recieved " << *p;
 		Synchronized::log(ss.str());
 
-		//Request access, block until granted
-		if (p->type == PipePacket::WRITE) getWriteAccess(p->file);
-		else if (p->type == PipePacket::READ) getReadAccess(p->file);
+		//Check usage
+		if (fileList.find(p->file) == fileList.end() && p->type == READ_REQUEST) {
 
-		//Create messages
-		std::stringstream s2, s3;
-		std::string msg = "Access Granted";
-		s2 << ME() << msg; s3 << "Sent " << msg;
-		std::string s = s2.str();
+			//Create the packet to send back
+			p2 = new PipePacket(ERROR_FILE_DNE, p->who, p->file);
+		}
+
+		//If valid request was sent
+		else {
+
+			//If the file doesn't exist, create it
+			if (fileList.find(p->file) == fileList.end()) 
+				fileList[p->file] = new SafeFile(p->file, p->who);
+
+			//Request access, block until granted
+			//Since the constructor reserves write access, this starts with else if
+			else if (p->type == WRITE_REQUEST) fileList[p->file]->getWriteAccess(p->who);
+			else if (p->type == READ_REQUEST) fileList[p->file]->getReadAccess(p->who);
+
+			//Create the packet to send back
+			if (p->type == WRITE_REQUEST)
+				p2 = new PipePacket(WRITE_ACCESS_GRANTED, p->who, p->file);
+			else if (p->type == READ_REQUEST)
+				p2 = new PipePacket(READ_ACCESS_GRANTED, p->who, p->file);
+		}
 
 		//Inform child process access has been granted, and log it
-		Assert( write(pipe[1], s.c_str(), s.size()) == s.size() );
-		Synchronized::log(s3.str());
+		Assert( write(childPipe[1], p2, sizeof(PipePacket) );
+		s2 << "Sent " << *p2; Synchronized::log(s2.str());
+		delete p2;
 	}
 
 	//Note this child thread will now die
 	Synchronized::log("This listener thread now dead");
 
-	//Prevent leaks
-	free(p); return NULL;
+	//Prevent leaks and return
+	free(p); delete[] arg; return NULL;
 }
 
 
-//-----Blocking functions called by child processes-----
+//---------------Blocking functions called by child processes---------------
 
+
+//Get permision to read or write to a file
+void FileHandler::getAccess(const PP_Type req, const PP_TYPE responce) {
+
+	//Make and send a PipePacket to request access
+	PipePakcet * p = new PipePacket(req, me(), s);
+	if (write(pipe[1], p, sizeof(PipePacket)) != sizeof(PipePacket))
+		Err("Error, full PipePacket failed to send");
+
+	//Block until packet is recieved in return
+	if (read(pipe[0], p, sizeof(PipePacket)) != sizeof(PipePacket))
+		Err("Error, full PipePacket was not recieved");
+	
+	//Verify contents
+	if (p->type != READ_ACCESS_GRANTED || p->who != me() || p->file != s) {
+		std::stringstream s; s << "Error, getAccess recieved " << *p;
+		Err(s.str());
+	}
+}
 
 //Read data from a file
-static const data FileHandler::read(const std::string& s);
+static const data FileHandler::read(const std::string& s) {
+
+	//Get access to the file
+	getAccess(READ_REQUEST, READ_ACCESS_GRANTED);
+
+	//Read data in
+	std::ifstream inFile( s, std::ios::binary );
+	data ret( (std::istreambuf_iterator<char>(inFile)), 
+              (std::istreambuf_iterator<char>()) );
+	inFile.close();
+
+	//Relinquish access
+	safeFile.finishReading(me());
+	
+	//Return data
+	return ret;	
+}
+
 
 //Write data to a file
-static void FileHandler::write(const std::string& s, const data& d);
-static void FileHandler::write(const std::string& s, const std::string d);
+inline void writeFn(const std::string& s, const char * d, int n) {
+
+    //Get access to the file
+    getAccess(WRITE_REQUEST, WRITE_ACCESS_GRANTED);
+
+    //Append data to the file
+    std::ofstream outFile( s, std::ios::binary | std::ios::app );
+    outFile.write( d , n*sizeof(char) );
+    outFile.close();
+
+	//Relinquish access
+	safeFile.finishWriting(me());
+}
+
+//Public wrappers to writeFn
+static void FileHandler::write(const std::string& s, const data& d) {
+	writeFn( s, (char*) &d[0], d.size() );
+}
+static void FileHandler::write(const std::string& s, const std::string d) {
+	writeFn( s, (char*) &d[0], d.size() );
+}
 

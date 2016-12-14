@@ -1,12 +1,18 @@
 #include "FileHandler.hpp"
 #include "main.hpp"
 
-#include <errno.h>
 #include <iostream>
+#include <signal>
+#include <map>
 
 //For clarity
 using namespace Synchronized;
 
+
+//Common functions
+int min(int a, int b) { 
+	return a < b ? a : b;
+}
 
 //Malloc, but check to see if failed
 void * safeMalloc(int s) {
@@ -28,26 +34,79 @@ void Assert(bool b, const char *s) { if (!b) Err(s); }
 
 //Create a string containing both
 //the PID and TID of this process and thread
-std::string me() {
+//If a non-empty argument is given, remember that
+//this thread should return s next time me is called
+//Each thread may only call me with an argument once!
+std::string me(const std::string s = "") {
+
+	//Memory
+	static std::map<const std::string, const std::string> mem;
+
+	//If an argument was passed, remeber what was requested
+	if (s != "") mem[me()] = std::string("[ ") + s + std::string(" ] ");
+
+	//Create me
 	std::stringstream ss;
 	ss << "[ Process: " << getpid() << ", thread: ";
 	ss << (unsigned int) pthread_self() << " ] ";
+
+	//Return the name of this thread if there is one
+	if (mem.find(ss.str()) != mem.end()) return mem.find(ss.str());
+
+	//Otherwise just return this thread's me
 	return std::move(ss.str());
 }
 
 
-//Clean up all zombies
-void * cleanZombies(void*) {
-	for(int i;;) while (wait(&i) == -1 && errno == EINTR);
-}
-
 //Main
 int main(int argc, const char * argv[]) {
 
-	//Start up
-	pthread_t tid;
+	//Check usage
+	Assert(argc == 2, "Usage: ./a.out <port>");
+	for(int i = 0; argv[1][i]; i++)
+		Assert(isdigit(argv[1][i]), "Usage: ./a.out <port>");
+
+	//Set settings
+	me("Master");
 	FileHandler();
-	pthread_create(&tid, NULL, cleanZombies, NULL);
-	log("Server started up")
-	
+	signal(SIGCHLD, SIG_IGN);
+
+	//Local variables
+    int sd, cLen = sizeof(client);
+    unsigned short port = argv[1];
+	struct sockaddr_in svr, client;
+
+    //Define the server
+    svr.sin_family = PF_INET;
+    svr.sin_port = htons( port );
+    svr.sin_addr.s_addr = INADDR_ANY;
+
+    //Create the listener socket as TCP, bind it, limit to 5 connections
+    Assert((sd = socket( PF_INET, SOCK_STREAM, 0 )) >= 0, "socket() failed");
+    Assert(bind(sd,(struct sockaddr*)&svr,sizeof(svr))>= 0, "bind() failed");
+    listen( sd, 5 ); 
+
+    //Listen to 5 connections and note so
+	log(std::string("Master server started; listening on port: " + std::to_string(port)));
+
+	//Loop
+	for(;;) {
+
+		//Wait for new connections
+        int sock = accept( sd, (struct sockaddr *)&client, (socklen_t*)&cLen );
+
+		//Log the new connection
+		std::stringstream s; s << "Received incoming connection from: ";
+		s << inet_ntoa( (struct in_addr)client.sin_addr ); log(s.str());
+
+		//Create forks and threads as needed
+		//Have the child start a new server
+		if (smartFork() == CHILD) {
+			(new Server(sock))->start();
+			exit(EXIT_SUCCESS);	
+		}
+    }
+
+	//To satisfy the compiler
+    return EXIT_SUCCESS;
 }

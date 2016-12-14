@@ -17,6 +17,9 @@
 //Longest file name supported
 #define FILE_NAME_MAX_LEN 63
 
+//Longest command supporder
+#define COMMAND_MAX_LEN 63
+
 //Forward declarations
 class SafeFile;
 
@@ -26,6 +29,9 @@ typedef std::vector<char> data;
 
 //Get 'name' of thread / process
 std::string me();
+
+//Common functions
+int min(int a, int b);
 
 //Used for error checking
 void * safeMalloc(int s);

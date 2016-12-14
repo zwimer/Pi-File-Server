@@ -1,9 +1,10 @@
 #include "SafeFile.hpp"
 
 //Constructor
-SafeFile::SafeFile(const char * n) : name(n) {
+SafeFile::SafeFile(const char * n, const std::string& who) : name(n) {
 	writing = PTHREAD_MUTEX_INITIALIZER;
 	whoM = PTHREAD_MUTEX_INITIALIZER;
+	getWriteAccess(who);
 }
 
 //Destructor

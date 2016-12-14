@@ -25,24 +25,25 @@
  */
 
 
+//Different types of PipePackets
+enum __PP_Type { 
+	READ_REQUEST, WRITE_REQUEST, FINISH_READ, 
+	FINISH_WRITE, READ_ACCESS_GRANTED,
+	WRITE_ACCESS_GRANTED, ERROR_FILE_DNE
+} PP_Type;
+
 //What will be sent through the pipes
 class PipePacket {
 public: 
 
 	//Constructor
 	PipePacket() = delete;
-	PipePacket(int typ, const char * w, const char * n);
+	PipePacket(PP_Type typ, const char * w, const char * n);
 
 	//Representation
-	const int type;
+	const PP_Type type;
 	const char who[64];
 	const char file[FILE_NAME_MAX_LEN+1];
-
-	//States of type
-	static const int READ; 
-	static const int WRITE; 
-	static const int FINISH_READ; 
-	static const int FINISH_WRITE; 
 };
 
 //A static class that handles file IO
@@ -57,12 +58,16 @@ public:
 	//and creates any necessary files that don't.
 	FileHandler();
 
-	//Child: Define the pipe to write to
+	//--------------------Called by child--------------------
+
+	//Define the pipe to the parent
 	static void setParent(int n[]);
 
-	//Parent: Starts a new thread, 
-	//listening to the pipe sent through on n
-	static void * newChild(int n[]);
+	//-------------------Called by parent-------------------
+
+	//Start a new thread that listens 
+	//to the pipe sent through as the argument 
+	static void * newChild( void * arg );
 
 	//-----Blocking functions called by child processes-----
 
@@ -81,6 +86,9 @@ public:
 	static const std::string userList;
 
 private:
+
+	//Requests req access, and verifies responce was returned
+	static void getAccess(PP_Type req, PP_Type responce);
 
 	//Representation
 	static std::map<const std::string, SafeFile*> fileList;

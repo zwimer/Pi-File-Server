@@ -14,7 +14,8 @@ namespace Synchronized {
 	int smartFork();
 
 	//Used to log an action
-	int log(const std::string s);
+	void log(const char * s);
+	void log(const std::string s);
 
 	//Values that smartFork can return
 	extern const int CHILD, PARENT;

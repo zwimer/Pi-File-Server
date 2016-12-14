@@ -9,7 +9,7 @@ const int Synchronized::PARENT = 1;
 int Synchronized::smartFork() {
 
 	//Local variables
-	int ret, arr[2];
+	int ret, * arr = new int[2];
 	
 	//Create the pipe and fork
  	Assert(!pipe(arr), "pipe() failed");
@@ -30,7 +30,8 @@ int Synchronized::smartFork() {
 }
 
 //Used to log an action
-void log(const std::string s) { 
+void Synchronized::log(const char * s) { log(std::string(s)); }
+void Synchronized::log(const std::string& s) { 
 
 	//Check use
 	Assert(s.size(), "trying to log an empty string");
