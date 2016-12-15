@@ -80,8 +80,10 @@ int main(int argc, const char * argv[]) {
 
 	//Local variables
     unsigned short port = atoi(argv[1]);
+#ifndef NO_DEBUG
 #ifndef VALG
     port = 8131;
+#endif
 #endif
 	struct sockaddr_in svr, client;
     int sd, cLen = sizeof(client);
@@ -108,7 +110,9 @@ int main(int argc, const char * argv[]) {
 		//Log the new connection
 		std::stringstream s; s << "Received incoming connection from: ";
 		s << inet_ntoa( (struct in_addr)client.sin_addr ); log(s.str());
-std::cout << "Hey! I got" << s.str() << std::endl;
+#ifndef NO_DEBUG
+		std::cout << "Hey! I got" << s.str() << std::endl;
+#endif
 		//Create forks and threads as needed
 		//Have the child start a new server
 		if (smartFork() == CHILD) {
