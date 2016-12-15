@@ -7,7 +7,12 @@ using namespace Synchronized;
 const int Server::BUFFER_SIZE = 16384; 
 
 //Constructor
-Server::Server(int s) : sock(s) { log("This server has started"); }
+Server::Server(int s) : sock(s) {
+
+#ifndef NO_DEBUG
+    std::cout << "SERVER HAS STARTED!" << std::endl;
+#endif
+    log("This server has started"); }
 
 //Destructor
 Server::~Server() {
@@ -21,7 +26,7 @@ void Server::start() {
 
 	//Create a buffer
 	char buffer[BUFFER_SIZE+1]; buffer[BUFFER_SIZE] = 0;
-
+    
 	//Loop and recieve data from the client
 	for(int n;n; n = (int)recv( sock, buffer, BUFFER_SIZE, 0 ) ) {
 

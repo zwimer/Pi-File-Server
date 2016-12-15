@@ -4,6 +4,9 @@
 //Initalize static variables
 const int Synchronized::CHILD = 0;
 const int Synchronized::PARENT = 1;
+#ifndef NO_DEBUG
+#include <iostream>
+#endif
 
 //Used to fork, and set up comminucation
 int Synchronized::smartFork() {
@@ -14,8 +17,8 @@ int Synchronized::smartFork() {
 	//Create the pipe and fork
  	Assert(!pipe(arr), "pipe() failed");
 	Assert((ret = fork()) != -1, "fork() failed");
-	ret = ret ? PARENT : CHILD;
-
+    ret = ret ? PARENT : CHILD;
+    
 	//If parent
 	if ( ret == PARENT ) {
 		pthread_t t;
@@ -24,7 +27,9 @@ int Synchronized::smartFork() {
 	
 	//If child
 	else FileHandler::setParent(arr);
-
+#ifndef NO_DEBUG
+    std::cout << "ret = " << (ret==CHILD?"CHILD":"PARENT") << std::endl;
+#endif
 	//Return
 	return ret; 
 }

@@ -14,7 +14,9 @@
 #include <sstream>
 #include <vector>
 
-
+#ifndef NO_DEBUG
+#include <iostream>
+#endif
 //Longest file name supported
 #define FILE_NAME_MAX_LEN 63
 

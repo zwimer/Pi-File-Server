@@ -31,29 +31,37 @@ void Err(const char *s) {
 void Assert(bool b, const char *s) { if (!b) Err(s); }
 
 
-//Create a string containing both
-//the PID and TID of this process and thread
-//If a non-empty argument is given, remember that
-//this thread should return s next time me is called
-//Each thread may only call me with an argument once!
+//Create a string unique to this thread of this process
+//If an argument is provided, make that the unqique
+//identifier of this thread of this process
 std::string me(const std::string s) {
 
 	//Memory
+	static std::map<long, int> numThreads;
 	static std::map<std::string, std::string> mem;
 
-	//If an argument was passed, remeber what was requested
-	if (s != "") mem[me()] = std::string("[ ") + s + std::string(" ] ");
+	//Create map key
+	std::stringstream ss; ss << getpid() << ',' << pthread_self();
 
-	//Create me
-	std::stringstream ss;
-	ss << "[ Process: " << getpid() << ", thread: ";
-	ss << pthread_self() << " ] ";
+	//If the process is not in the map, add it
+	if (mem.find(ss.str()) == mem.end()) {
 
-	//Return the name of this thread if there is one
-	if (mem.find(ss.str()) != mem.end()) return mem[ss.str()];
+		//If an argument was passed, use this as the map value
+		if (s != "") mem[ss.str()] = std::string("[ ") + s + std::string(" ] ");
+	
+		//Otherwise construct one
+		else {
+			std::stringstream ss2; ss2 << "[ " << getpid()
+				<< " - " << numThreads[(long)getpid()] << " ] ";
+			mem[ss.str()] = ss2.str();
+		}
 
-	//Otherwise just return this thread's me
-	return std::move(ss.str());
+		//Increment number of threads
+		numThreads[(long)getpid()]++;	
+	}
+
+	//Return the id
+	return mem[ss.str()];
 }
 
 
@@ -72,6 +80,9 @@ int main(int argc, const char * argv[]) {
 
 	//Local variables
     unsigned short port = atoi(argv[1]);
+#ifndef VALG
+    port = 8131;
+#endif
 	struct sockaddr_in svr, client;
     int sd, cLen = sizeof(client);
 
@@ -97,11 +108,14 @@ int main(int argc, const char * argv[]) {
 		//Log the new connection
 		std::stringstream s; s << "Received incoming connection from: ";
 		s << inet_ntoa( (struct in_addr)client.sin_addr ); log(s.str());
-
+std::cout << "Hey! I got" << s.str() << std::endl;
 		//Create forks and threads as needed
 		//Have the child start a new server
 		if (smartFork() == CHILD) {
-			Server(sock).start();
+#ifndef NO_DEBUG
+            std::cout << "Pre-constructor" << std::endl;
+#endif
+            auto a = new Server(sock); a->start(); delete a;
 			exit(EXIT_SUCCESS);	
 		}
     }

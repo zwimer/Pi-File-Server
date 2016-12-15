@@ -29,4 +29,5 @@ Pi-File-Server.xcodeproj/*
 # Executables
 *.exe
 *.out
+*.out.dSYM/*
 *.app

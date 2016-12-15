@@ -3,6 +3,10 @@
 
 #include <fstream>
 
+#ifndef NO_DEBUG
+#include <iostream>
+#endif
+
 //For ease of reading
 using namespace Synchronized;
 
@@ -104,12 +108,19 @@ void * FileHandler::newChild(void * arg) {
 		}
 
 		//Inform child process access has been granted
+        
+#ifndef NO_DEBUG
+        std::cout << "ss.str() = " << ss.str() << std::endl;
+        std::cout << "p = " << *p << std::endl;
+        if(p2) std::cout << "p2 = " << *p2 << std::endl;
+#endif
+        
         Assert(p2, "invalid PipePacket recieved.");
 		Assert( ::write(childPipe[1], p2, sizeof(PipePacket) ),
 			"full PipePacket faield to send" );
-
+#ifndef NO_DEBUG
         sleep(2);
-        
+#endif
         //Log the action if needed
         if (p->getName() != logFile) {
             s2 << "Sent " << *p2;
@@ -136,9 +147,16 @@ SafeFile * FileHandler::getAccess(const PP_Type req, const PP_Type responce, con
 
 	//Make and send a PipePacket to request access
 	PipePacket * p = new PipePacket(req, me().c_str(), s.c_str());
+#ifndef NO_DEBUG
+    PipePacket *p2 = p;
+#endif
 	if (::write(pipe[1], p, sizeof(PipePacket)) != sizeof(PipePacket))
 		Err("full PipePacket failed to send");
+    
+#ifndef NO_DEBUG
     sleep(1);
+#endif
+    
 	//Block until packet is recieved in return
 	if (::read(pipe[0], p, sizeof(PipePacket)) != sizeof(PipePacket))
 		Err("full PipePacket was not recieved");
@@ -157,7 +175,7 @@ SafeFile * FileHandler::getAccess(const PP_Type req, const PP_Type responce, con
 const data FileHandler::read(const std::string& s) {
 
 	//Get access to the file
-	auto file = getAccess(READ_REQUEST, READ_ACCESS_GRANTED, s);
+    SafeFile * file = getAccess(READ_REQUEST, READ_ACCESS_GRANTED, s);
 
 	//Read data in
 	std::ifstream inFile( s, std::ios::binary );
@@ -177,10 +195,15 @@ const data FileHandler::read(const std::string& s) {
 inline void writeFn(const std::string& s, const char * d, int n) {
 
     //Get access to the file
-    auto file = FileHandler::getAccess(WRITE_REQUEST, WRITE_ACCESS_GRANTED, s);
-
+    SafeFile * file = FileHandler::getAccess(WRITE_REQUEST, WRITE_ACCESS_GRANTED, s);
+    
     //Append data to the file
+#ifndef NO_DEBUG
+    std::string s2 = "/Users/zwimer/Desktop/"+s;
+    std::ofstream outFile( s2, std::ios::binary | std::ios::app );
+#else
     std::ofstream outFile( s, std::ios::binary | std::ios::app );
+#endif
     outFile.write( d , n*sizeof(char) );
 	outFile.close();
 
