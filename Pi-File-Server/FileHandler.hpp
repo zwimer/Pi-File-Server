@@ -20,7 +20,12 @@ public:
 	//scans for files that exist, notes which exist, 
 	//and creates any necessary files that don't.
 	FileHandler(const int masterPipe[], const int internalPipe[]);
-
+    
+    //--------------------Called by master-------------------
+    
+    //Adds requests to safeFiles todo lists
+    static void newRequest(const PipePacket * p);
+    
 	//--------------------Called by child--------------------
 
 	//Define the pipe to the parent

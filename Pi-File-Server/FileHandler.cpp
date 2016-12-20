@@ -41,6 +41,17 @@ FileHandler::FileHandler(const int masterPipe[], const int internalPipe[]) {
 }
 
 
+//------------------------------Called by master-----------------------------
+
+
+//Adds requests to safeFiles todo lists
+void FileHandler::newRequest(const PipePacket * p) {
+    
+    TODO
+    
+}
+
+
 //------------------------------Called by child------------------------------
 
 

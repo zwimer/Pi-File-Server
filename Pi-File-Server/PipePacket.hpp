@@ -12,9 +12,10 @@ class SafeFile;
 
 //Different types of PipePackets
 typedef enum __PP_Type { 
-	READ_REQUEST, WRITE_REQUEST, FINISH_READ, 
-	FINISH_WRITE, INIT, READ_ACCESS_GRANTED,
-	WRITE_ACCESS_GRANTED, ERROR_FILE_DNE
+    READ_REQUEST, WRITE_REQUEST,
+    WRITE_ACCESS_GRANTED,
+    READ_ACCESS_GRANTED,
+    ERROR_FILE_DNE, INIT
 } PP_Type;
 
 
@@ -43,7 +44,7 @@ public:
     void sendRecvVerify(int p[], const PP_Type responce, const char * Msg);
     
     //Representation
-    const int ProcessNum;
+    const int pNum;
 	SafeFile * file;
 
 private:

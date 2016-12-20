@@ -64,28 +64,27 @@ std::string me(const std::string s) {
 	return mem[ss.str()];
 }
 
-//Handles all requests to access files
+//This function allows child processes
+//to move their request to the master process
 void * handleFileRequests( void * readPipe ) {
     
     //Detach thread
     pthread_detach(pthread_self());
-
-    //Loop
-    int mp = * (int*) readPipe;
-    for(PipePacket p(INIT, NULL, NULL);;) {
     
-        //Wait for new request
-        p.read(mp)
-        
-        
+    //Local variables
+    int mp = * (int*) readPipe;
+    const char * errMsg = "master recieved invalid PipePacket";
+
+    //Log, verify, and pass off every request recieved to FileHandler
+    for(PipePacket * p = (PipePacket*) safeMalloc(sizeof(PipePacket));;) {
+        p->read(mp); sstr s; s << "Master recieved " << p; log(s.str());
+        Assert(p->type == READ_REQUEST || p->type == WRITE_REQUEST, errMsg);
+        FileHandler::newRequest(p);
     }
     
     //Satisfy the compiler
     return NULL;
 }
-
-
-
 
 //Main
 int main(int argc, const char * argv[]) {
