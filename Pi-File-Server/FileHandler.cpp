@@ -28,20 +28,16 @@ std::map<const std::string, SafeFile*> FileHandler::fileList;
 //It only exists to force initalization This function
 //scans for files that exist, notes which exist, 
 //and creates any necessary files that don't.
-FileHandler::FileHandler() {
+FileHandler::FileHandler(const int masterPipe[], const int internalPipe[]) {
 
-	//Initalize pipe to itself
-    Assert(!::pipe(pipe), "pipe() failed");
+    //Initalize pipe
+    pipe[1] = masterPipe[1];    
+    pipe[0] = internalPipe[0];
 
 	//Create required server files
 	fileList[logFile] = new SafeFile(logFile);
 	fileList[infoFile] = new SafeFile(infoFile);
 	fileList[userFile] = new SafeFile(userFile);
-
-    //Start a newChild for the master process, this marks setup as false
-    pthread_t tid; pthread_create(&tid, NULL, newChild, pipe);
-    
-    
 }
 
 
@@ -54,121 +50,16 @@ void FileHandler::setParent(int n[]) {
 }
 
 
-//-----------------------------Called by parent-----------------------------
-
-
-//Start a new thread that listens 
-//to the pipe sent through as the argument 
-void * FileHandler::newChild(void * arg) {
-
-	//Detach thread
-	pthread_detach(pthread_self());
-
-	//Local variables
-	int n, size = sizeof(PipePacket);
-	const int * childPipe = (int*) arg;
-	PipePacket *p2, *p = (PipePacket*) safeMalloc(size);
-
-    //Log this thread's creation
-	if (!setup) Synchronized::log("New listener thread created and waiting");
-    else setup = false;
-    
-    //While the pipe is open, take requests
-    for(p2 = NULL; ( n = (int)::read(childPipe[0], p, size) ); p2 = NULL ) {
-
-		//Check what was recieved and log it
-		Assert(n==size, "Master process recieved invalid PipePacket size");
-		std::stringstream ss, s2; ss << "Recieved "  << (PipePacket)*p;
-        if (p->getName() != logFile) Synchronized::log(ss.str());
-        
-		//Check usage
-		if (fileList.find(p->getName()) == fileList.end() && p->type == READ_REQUEST) {
-
-			//Create the packet to send back
-			p2 = new PipePacket(ERROR_FILE_DNE, p->getWho(), p->getName());
-		}
-
-		//If valid request was sent
-		else {
-
-			//If the file doesn't exist, create it
-			if (fileList.find(p->getName()) == fileList.end()) 
-				fileList[p->getName()] = new SafeFile(p->getName(), p->getWho());
-
-			//Request access, block until granted
-			//Since the constructor reserves write access, this starts with else if
-			else if (p->type == WRITE_REQUEST) fileList[p->getName()]->getWriteAccess(p->getWho());
-			else if (p->type == READ_REQUEST) fileList[p->getName()]->getReadAccess(p->getWho());
-
-			//Create the packet to send back
-			if (p->type == WRITE_REQUEST)
-				p2 = new PipePacket(WRITE_ACCESS_GRANTED, p->getWho(), p->getName(), fileList[p->getName()]);
-			else if (p->type == READ_REQUEST)
-				p2 = new PipePacket(READ_ACCESS_GRANTED, p->getWho(), p->getName(), fileList[p->getName()]);
-		}
-
-		//Inform child process access has been granted
-        
-#ifndef NO_DEBUG
-        std::cout << "ss.str() = " << ss.str() << std::endl;
-        std::cout << "p = " << *p << std::endl;
-        if(p2) std::cout << "p2 = " << *p2 << std::endl;
-#endif
-        
-        Assert(p2, "invalid PipePacket recieved.");
-		Assert( ::write(childPipe[1], p2, sizeof(PipePacket) ),
-			"full PipePacket faield to send" );
-#ifndef NO_DEBUG
-        sleep(2);
-#endif
-        //Log the action if needed
-        if (p->getName() != logFile) {
-            s2 << "Sent " << *p2;
-            Synchronized::log(s2.str());
-        }
-        
-        //Prevent leaks
-		delete p2;
-	}
-
-	//Note this child thread will now die
-	Synchronized::log("This listener thread now dead");
-
-	//Prevent leaks and return
-	free(p); delete[] (int*)arg; return NULL;
-}
-
-
 //---------------Blocking functions called by child processes---------------
 
 
-//Get permision to read or write to a file
-SafeFile * FileHandler::getAccess(const PP_Type req, const PP_Type responce, const std::string& s) {
-
-	//Make and send a PipePacket to request access
-	PipePacket * p = new PipePacket(req, me().c_str(), s.c_str());
-#ifndef NO_DEBUG
-    PipePacket *p2 = p;
-#endif
-	if (::write(pipe[1], p, sizeof(PipePacket)) != sizeof(PipePacket))
-		Err("full PipePacket failed to send");
-    
-#ifndef NO_DEBUG
-    sleep(1);
-#endif
-    
-	//Block until packet is recieved in return
-	if (::read(pipe[0], p, sizeof(PipePacket)) != sizeof(PipePacket))
-		Err("full PipePacket was not recieved");
-	
-	//Verify contents
-	if (p->type != responce || p->getWho() != me() || p->getName() != s) {
-		std::stringstream s; s << "getAccess recieved " << *p;
-		Err(s.str().c_str());
-	}
-
-	//Return the SafeFile * pointer
-	auto ret = p->file; delete p; return ret;
+//Get permision to read or write to a file. This function makes a request to get
+//access to the file, verifies the result, then returns pointer to the SafeFile when granted
+SafeFile * FileHandler::getAccess(const PP_Type ping, const PP_Type pong, const std::string& s) {
+    sstr s2; s2 << "getAccess failed for " << s;
+	PipePacket p(ping, me().c_str(), s.c_str());
+    p.sendRecvVerify(pipe, pong, s2.str().c_str());
+    return p.file;
 }
 
 //Read data from a file

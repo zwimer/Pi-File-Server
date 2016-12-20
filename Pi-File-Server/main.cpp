@@ -41,7 +41,7 @@ std::string me(const std::string s) {
 	static std::map<std::string, std::string> mem;
 
 	//Create map key
-	std::stringstream ss; ss << getpid() << ',' << pthread_self();
+	sstr ss; ss << getpid() << ',' << pthread_self();
 
 	//If the process is not in the map, add it
 	if (mem.find(ss.str()) == mem.end()) {
@@ -51,7 +51,7 @@ std::string me(const std::string s) {
 	
 		//Otherwise construct one
 		else {
-			std::stringstream ss2; ss2 << "[ " << getpid()
+			sstr ss2; ss2 << "[ " << getpid()
 				<< " - " << numThreads[(long)getpid()] << " ] ";
 			mem[ss.str()] = ss2.str();
 		}
@@ -64,6 +64,28 @@ std::string me(const std::string s) {
 	return mem[ss.str()];
 }
 
+//Handles all requests to access files
+void * handleFileRequests( void * readPipe ) {
+    
+    //Detach thread
+    pthread_detach(pthread_self());
+
+    //Loop
+    int mp = * (int*) readPipe;
+    for(PipePacket p(INIT, NULL, NULL);;) {
+    
+        //Wait for new request
+        p.read(mp)
+        
+        
+    }
+    
+    //Satisfy the compiler
+    return NULL;
+}
+
+
+
 
 //Main
 int main(int argc, const char * argv[]) {
@@ -73,21 +95,22 @@ int main(int argc, const char * argv[]) {
 	for(int i = 0; argv[1][i]; i++)
 		Assert(isdigit(argv[1][i]), "Usage: ./a.out <port>");
 
-	//Set settings
+	//Settings
 	me("Master");
-	FileHandler();
 	signal(SIGCHLD, SIG_IGN);
 
 	//Local variables
     unsigned short port = atoi(argv[1]);
-#ifndef NO_DEBUG
-#ifndef VALG
-    port = 8131;
-#endif
-#endif
+    int masterPipe[2], internalPipe[2];
 	struct sockaddr_in svr, client;
     int sd, cLen = sizeof(client);
 
+    //Initalizizations
+    Assert(!pipe(masterPipe), "pipe() failed");
+    Assert(!pipe(internalPipe), "pipe() failed");
+    writePipes.push_back(internalPipe[1]);
+    FileHandler(masterPipe, internalPipe);
+    
     //Define the server
     svr.sin_family = PF_INET;
     svr.sin_port = htons( port );
@@ -96,8 +119,11 @@ int main(int argc, const char * argv[]) {
     //Create the listener socket as TCP, bind it, limit to 5 connections
     Assert((sd = socket( PF_INET, SOCK_STREAM, 0 )) >= 0, "socket() failed");
     Assert(bind(sd,(struct sockaddr*)&svr,sizeof(svr))>= 0, "bind() failed");
-    listen( sd, 5 ); 
+    listen( sd, NUM_CLIENTS );
 
+    //Start up the file syncronizing thread
+    pthread_t t; pthread_create( &t, NULL, handleFileRequests, NULL );
+    
     //Note that the server is now up
 	log(std::string("Master server started; listening on port: " + std::to_string(port)));
 
@@ -108,18 +134,13 @@ int main(int argc, const char * argv[]) {
         int sock = accept( sd, (struct sockaddr *)&client, (socklen_t*)&cLen );
 
 		//Log the new connection
-		std::stringstream s; s << "Received incoming connection from: ";
+		sstr s; s << "Received incoming connection from: ";
 		s << inet_ntoa( (struct in_addr)client.sin_addr ); log(s.str());
-#ifndef NO_DEBUG
-		std::cout << "Hey! I got" << s.str() << std::endl;
-#endif
+
 		//Create forks and threads as needed
-		//Have the child start a new server
-		if (smartFork() == CHILD) {
-#ifndef NO_DEBUG
-            std::cout << "Pre-constructor" << std::endl;
-#endif
-            auto a = new Server(sock); a->start(); delete a;
+        //Have the child start a new server in its own scope
+		if (smartFork(masterPipe) == CHILD) {
+            close(masterPipe[0]); {Server a(sock, (int)writePipes.size());}
 			exit(EXIT_SUCCESS);	
 		}
     }

@@ -14,14 +14,14 @@
 #include <sstream>
 #include <vector>
 
-#ifndef NO_DEBUG
-#include <iostream>
-#endif
 //Longest file name supported
 #define FILE_NAME_MAX_LEN 63
 
 //Longest command supporder
 #define COMMAND_MAX_LEN 63
+
+//Define the max number of clients
+#define NUM_CLIENTS 5
 
 //Forward declarations
 class SafeFile;
@@ -29,6 +29,7 @@ class SafeFile;
 //For simplicity
 typedef unsigned int uint;
 typedef std::vector<char> data;
+typedef std::stringstream sstr;
 
 //Get 'name' of thread / process
 std::string me(const std::string s = "");

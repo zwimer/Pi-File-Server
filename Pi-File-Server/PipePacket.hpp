@@ -13,9 +13,10 @@ class SafeFile;
 //Different types of PipePackets
 typedef enum __PP_Type { 
 	READ_REQUEST, WRITE_REQUEST, FINISH_READ, 
-	FINISH_WRITE, READ_ACCESS_GRANTED,
+	FINISH_WRITE, INIT, READ_ACCESS_GRANTED,
 	WRITE_ACCESS_GRANTED, ERROR_FILE_DNE
 } PP_Type;
+
 
 
 //What will be sent through the pipes
@@ -23,8 +24,9 @@ class PipePacket {
 public: 
 
 	//Constructor
-	PipePacket() = delete;
-	PipePacket(PP_Type typ, const char * w, const char * n, SafeFile * = NULL);
+    PipePacket() = delete;
+    PipePacket(const PipePacket * p);
+    PipePacket(PP_Type typ, const char * w, const char * n, SafeFile * = NULL);
 
 	//Type of PipePacket
 	const PP_Type type;
@@ -33,14 +35,22 @@ public:
 	const char * getWho() const;
 	const char * getName() const;
 
-	//Representation
+    //Read and Write wrappers
+    void write(int fd) const;
+    void read(int fd);
+    
+    //Calls write, then read, then verifies the response
+    void sendRecvVerify(int p[], const PP_Type responce, const char * Msg);
+    
+    //Representation
+    const int ProcessNum;
 	SafeFile * file;
 
 private:
 
 	//Representation
-	char who[WHO_ARR_SIZE];
-	char name[FILE_ARR_SIZE];
+	char who[WHO_ARR_SIZE+1];
+	char name[FILE_ARR_SIZE+1];
 };
 
 //Stream operator

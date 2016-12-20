@@ -4,32 +4,24 @@
 //Initalize static variables
 const int Synchronized::CHILD = 0;
 const int Synchronized::PARENT = 1;
-#ifndef NO_DEBUG
-#include <iostream>
-#endif
 
 //Used to fork, and set up comminucation
-int Synchronized::smartFork() {
+int Synchronized::smartFork(int masterPipe[]) {
 
 	//Local variables
-	int ret, * arr = new int[2];
-	
+    int ret, arr[2];
+    
 	//Create the pipe and fork
  	Assert(!pipe(arr), "pipe() failed");
 	Assert((ret = fork()) != -1, "fork() failed");
     ret = ret ? PARENT : CHILD;
     
-	//If parent
-	if ( ret == PARENT ) {
-		pthread_t t;
-		pthread_create(&t, NULL, FileHandler::newChild, (void*)arr);
-	}
-	
-	//If child
-	else FileHandler::setParent(arr);
-#ifndef NO_DEBUG
-    std::cout << "ret = " << (ret==CHILD?"CHILD":"PARENT") << std::endl;
-#endif
+	//If child, define the pipes to use
+	if ( ret == CHILD ) {
+        close(arr[1]); arr[1] = masterPipe[1];
+		FileHandler::setParent(arr);
+    }
+
 	//Return
 	return ret; 
 }
@@ -44,8 +36,7 @@ void Synchronized::log(const std::string& s) {
 			"trying to log a string with a new line");
 
 	//Format string
-	std::stringstream ss;
-	ss << me() << s << ((s[s.size()-1] == '\n') ? "":"\n");
+	sstr ss; ss << me() << s << ((s[s.size()-1] == '\n') ? "":"\n");
 
 	//Log the string
 	FileHandler::write(FileHandler::logFile, ss.str());

@@ -7,18 +7,16 @@ using namespace Synchronized;
 const int Server::BUFFER_SIZE = 16384; 
 
 //Constructor
-Server::Server(int s) : sock(s) {
-
-#ifndef NO_DEBUG
-    std::cout << "SERVER HAS STARTED!" << std::endl;
-#endif
-    log("This server has started"); }
+Server::Server(int s, int p) : sock(s), pNum(p) {
+    sstr s2; s2 << "Child server " << p << " has started.";
+    log(s2.str());
+    start();
+}
 
 //Destructor
 Server::~Server() {
-
-	//Log that the client disconnected
-	log("Client disconnected");
+    sstr s2; s2 << "Client disconnected from server #" << p << ".";
+	log(s2.str());
 }
 
 //The function that runs the server
