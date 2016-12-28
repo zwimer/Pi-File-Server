@@ -37,28 +37,7 @@ FileHandler::FileHandler() {
 
 }
 
-
-//------------------------------Called by master-----------------------------
-
-
-//Adds requests to safeFiles todo lists
-void FileHandler::newRequest(const PipePacket * p) {
-    
-    TODO
-    
-}
-
-
-//------------------------------Called by child------------------------------
-
-
-//Define the pipe to the parent
-void FileHandler::setParent(int n[]) {
-	pipe[0] = n[0]; pipe[1] = n[1];
-}
-
-
-//---------------Blocking functions called by child processes---------------
+//----------------------------Blocking functions----------------------------
 
 
 //Get permision to read or write to a file. This function makes a request to get
