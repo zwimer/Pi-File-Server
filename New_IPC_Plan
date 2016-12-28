@@ -1,10 +1,11 @@
+Old:
    FH
----------		|-----------|
-|	----|---->	|	name	|
----------		|	std::set|
-|		|		|	mutex 1	|
----------		|	mutex 2	|
-|		|		-------------
+---------		-----------------
+|	----|---->	|	name		|
+---------		|	std::set	|
+|		|		|	mutex 1		|
+---------		|	mutex 2		|
+|		|		-----------------
 ---------
 |		|
 ---------
@@ -12,36 +13,35 @@
 ---------
 
 --------------------------------------
+New:
 
-Semaphore "AlterMainMap"
+FileList file must have
+	FileList as line 1
+	UserList as line 2
+	Other files each on their own line
+	This file maps an index, line number, to the filename.
+	Must itself be a SF
+
+UserList
+	Line 1 = master proc
+	Other users each on their own line
+	This file maps an index, line number, to the username.
+	Must itself be a SF
+
+mutex "AlterMainMap"
 
 class SF { mutex a,b; int index };
 
 inter-proc-map "fileList" (map: file name -> sf)
--------------------------
-|	char[64]	|	SF	|
--------------------------
-|	char[64]	|	SF	|
--------------------------
-|	char[64]	|	SF	|
--------------------------
-|	char[64]	|	SF	|
--------------------------
-|	char[64]	|	SF	|
--------------------------
-
-inter-proc-map "userMap" (map: user -> user index)
--------------------------
-|	char[64]	|	0	|
--------------------------
-|	char[64]	|	1	|
--------------------------
-|	char[64]	|	2	|
--------------------------
-|	char[64]	|	3	|
--------------------------
-|	char[64]	|	4	|
--------------------------
+-----------------
+|  int  |	SF	|
+-----------------
+|  int  |	SF	|
+-----------------
+|  int  |	SF	|
+-----------------
+|  int  |	SF	|
+-----------------
 
 For each file in main map:
 
@@ -58,6 +58,6 @@ For each file in main map:
 	|	4	|
 	---------
 
-	Semaphore "File: %d writing", index
-	Semaphore "File: %d whoM", index
+	mutex "File: %d writing", index
+	mutex "File: %d whoM", index
 
