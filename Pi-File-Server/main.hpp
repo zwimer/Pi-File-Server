@@ -14,6 +14,11 @@
 #include <sstream>
 #include <vector>
 
+//TODO
+#ifndef NO_DEBUG
+#include <iostream>
+#endif
+
 //Define pow2
 #define pow2(P) (__pow2<P>::v)
 template <int N> struct __pow2  { enum { v = 2 * pow2(N-1) }; };
@@ -24,11 +29,8 @@ template <> struct __pow2<0> { enum { v = 1 }; };
 #define MAX_USERS ( pow2(4) )
 #define SHAR_MEM_SIZE (MAX_USERS*(MAX_FILE + 1024))
 
-//Longest command supporder
+//Longest command supported
 #define COMMAND_MAX_LEN 63
-
-//Forward declarations
-class SafeFile;
 
 //For simplicity
 typedef unsigned int uint;
@@ -39,7 +41,7 @@ typedef std::stringstream sstr;
 std::string me(const std::string s = "");
 
 //Common functions
-int min(int a, int b);
+int min(const int a, const int b);
 
 //Used for error checking
 void * safeMalloc(int s);

@@ -9,7 +9,7 @@
 using namespace Synchronized;
 
 //Common functions
-int min(int a, int b) { 
+int min(const int a, const int b) { 
 	return a < b ? a : b;
 }
 
@@ -57,8 +57,8 @@ std::string me(const std::string s) {
 	
 		//Otherwise construct one
 		else {
-			sstr ss2; ss2 << "[ " << getpid()
-				<< " - " << numThreads[(long)getpid()] << " ] ";
+			sstr ss2; ss2 << "[ " << getpid() << " - "
+				<< numThreads[(long)getpid()] << " ] ";
 			mem[ss.str()] = ss2.str();
 		}
 
@@ -96,22 +96,19 @@ int main(int argc, const char * argv[]) {
     Assert((sd = socket( PF_INET, SOCK_STREAM, 0 )) >= 0, "socket() failed");
     Assert(bind(sd,(struct sockaddr*)&svr,sizeof(svr))>= 0, "bind() failed");
     listen( sd, 5 );
-
-    //Start up the file syncronizing thread
-    pthread_t t; pthread_create( &t, NULL, handleFileRequests, NULL );
     
-    //Note that the server is now up
-	log(std::string("Master server started; listening on port: " + std::to_string(port)));
+    //Note that the master server is now up
+	sstr s; s << "Master server started; listening on port: " << port; log(s.str());
 
-	//Parent process, loop forever. Child, break on creation
-	for(int v = 1; v; v = safeFork()) {
+	//Parent process: loop, Child: break
+	for(int i = 1; i; i = safeFork()) {
 
 		//Wait for new connections
         sock = accept( sd, (struct sockaddr *)&client, (socklen_t*)&cLen );
 		Assert(sock != -1, "sock() failed.");
 
 		//Log the new connection
-		sstr s; s << "Received incoming connection from: ";
+		s.str(""); s << "Received incoming connection from: ";
 		s << inet_ntoa( (struct in_addr)client.sin_addr ); log(s.str());
     }
 
