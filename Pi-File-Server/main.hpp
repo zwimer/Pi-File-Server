@@ -14,14 +14,18 @@
 #include <sstream>
 #include <vector>
 
-//Longest file name supported
-#define FILE_NAME_MAX_LEN 63
+//Define pow2
+#define pow2(P) (__pow2<P>::v)
+template <int N> struct __pow2  { enum { v = 2 * pow2(N-1) }; };
+template <> struct __pow2<0> { enum { v = 1 }; };
+
+//Define define max number of sizes
+#define MAX_FILES ( pow2(24) )
+#define MAX_USERS ( pow2(4) )
+#define SHAR_MEM_SIZE (MAX_USERS*(MAX_FILE + 1024))
 
 //Longest command supporder
 #define COMMAND_MAX_LEN 63
-
-//Define the max number of clients
-#define NUM_CLIENTS 5
 
 //Forward declarations
 class SafeFile;

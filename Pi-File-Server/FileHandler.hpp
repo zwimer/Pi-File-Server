@@ -19,19 +19,9 @@ public:
 	//It only exists to force initalization This function
 	//scans for files that exist, notes which exist, 
 	//and creates any necessary files that don't.
-	FileHandler(const int masterPipe[], const int internalPipe[]);
+	FileHandler();
     
-    //--------------------Called by master-------------------
-    
-    //Adds requests to safeFiles todo lists
-    static void newRequest(const PipePacket * p);
-    
-	//--------------------Called by child--------------------
-
-	//Define the pipe to the parent
-	static void setParent(int n[]);
-
-	//-----Blocking functions called by child processes-----
+	//------------------Blocking functions------------------
 
 	//Requests req access, and verifies responce was returned
 	static SafeFile * getAccess(PP_Type, PP_Type, const std::string&);
@@ -49,18 +39,6 @@ public:
 	static const std::string logFile;
 	static const std::string infoFile;
 	static const std::string userFile;
-
-private:
-
-	//List of all safe files
-	static std::map<const std::string, SafeFile*> fileList;
-
-	//This stays the same across threads
-	//But changes depending on the process
-	static int pipe[2];
-    
-    //True before constructor has been called
-    static bool setup;
 };
 
 #endif

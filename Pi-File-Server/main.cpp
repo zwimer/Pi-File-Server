@@ -5,20 +5,12 @@
 #include <signal.h>
 #include <map>
 
-//For clarity
+//For readability
 using namespace Synchronized;
-
 
 //Common functions
 int min(int a, int b) { 
 	return a < b ? a : b;
-}
-
-//Malloc, but check to see if failed
-void * safeMalloc(int s) {
-	void * ret = malloc((size_t)s);
-	Assert(ret, "malloc failed");
-	return ret;
 }
 
 //A function used if an assert fails
@@ -29,6 +21,20 @@ void Err(const char *s) {
 
 //A function used to test assertions
 void Assert(bool b, const char *s) { if (!b) Err(s); }
+
+//Fork, but check to see if failed
+void * safeFork() {
+	int ret = fork();
+	Assert(ret != -1, "fork() failed");
+	return ret;
+}
+
+//Malloc, but check to see if failed
+void * safeMalloc(int s) {
+	void * ret = malloc((size_t)s);
+	Assert(ret, "malloc() failed");
+	return ret;
+}
 
 
 //Create a string unique to this thread of this process
@@ -64,28 +70,6 @@ std::string me(const std::string s) {
 	return mem[ss.str()];
 }
 
-//This function allows child processes
-//to move their request to the master process
-void * handleFileRequests( void * readPipe ) {
-    
-    //Detach thread
-    pthread_detach(pthread_self());
-    
-    //Local variables
-    int mp = * (int*) readPipe;
-    const char * errMsg = "master recieved invalid PipePacket";
-
-    //Log, verify, and pass off every request recieved to FileHandler
-    for(PipePacket * p = (PipePacket*) safeMalloc(sizeof(PipePacket));;) {
-        p->read(mp); sstr s; s << "Master recieved " << p; log(s.str());
-        Assert(p->type == READ_REQUEST || p->type == WRITE_REQUEST, errMsg);
-        FileHandler::newRequest(p);
-    }
-    
-    //Satisfy the compiler
-    return NULL;
-}
-
 //Main
 int main(int argc, const char * argv[]) {
 
@@ -99,17 +83,10 @@ int main(int argc, const char * argv[]) {
 	signal(SIGCHLD, SIG_IGN);
 
 	//Local variables
-    unsigned short port = atoi(argv[1]);
-    int masterPipe[2], internalPipe[2];
 	struct sockaddr_in svr, client;
-    int sd, cLen = sizeof(client);
+    int sd, sock, cLen = sizeof(client);
+    unsigned short port = atoi(argv[1]);
 
-    //Initalizizations
-    Assert(!pipe(masterPipe), "pipe() failed");
-    Assert(!pipe(internalPipe), "pipe() failed");
-    writePipes.push_back(internalPipe[1]);
-    FileHandler(masterPipe, internalPipe);
-    
     //Define the server
     svr.sin_family = PF_INET;
     svr.sin_port = htons( port );
@@ -118,7 +95,7 @@ int main(int argc, const char * argv[]) {
     //Create the listener socket as TCP, bind it, limit to 5 connections
     Assert((sd = socket( PF_INET, SOCK_STREAM, 0 )) >= 0, "socket() failed");
     Assert(bind(sd,(struct sockaddr*)&svr,sizeof(svr))>= 0, "bind() failed");
-    listen( sd, NUM_CLIENTS );
+    listen( sd, 5 );
 
     //Start up the file syncronizing thread
     pthread_t t; pthread_create( &t, NULL, handleFileRequests, NULL );
@@ -126,24 +103,18 @@ int main(int argc, const char * argv[]) {
     //Note that the server is now up
 	log(std::string("Master server started; listening on port: " + std::to_string(port)));
 
-	//Loop
-	for(;;) {
+	//Parent process, loop forever. Child, break on creation
+	for(int v = 1; v; v = safeFork()) {
 
 		//Wait for new connections
-        int sock = accept( sd, (struct sockaddr *)&client, (socklen_t*)&cLen );
+        sock = accept( sd, (struct sockaddr *)&client, (socklen_t*)&cLen );
+		Assert(sock != -1, "sock() failed.");
 
 		//Log the new connection
 		sstr s; s << "Received incoming connection from: ";
 		s << inet_ntoa( (struct in_addr)client.sin_addr ); log(s.str());
-
-		//Create forks and threads as needed
-        //Have the child start a new server in its own scope
-		if (smartFork(masterPipe) == CHILD) {
-            close(masterPipe[0]); {Server a(sock, (int)writePipes.size());}
-			exit(EXIT_SUCCESS);	
-		}
     }
 
-	//To satisfy the compiler
-    return EXIT_SUCCESS;
+	//Child: Start the server, exit when server quits
+	Server a(sock); return EXIT_SUCCESS;
 }

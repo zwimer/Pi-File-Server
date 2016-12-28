@@ -28,16 +28,13 @@ std::map<const std::string, SafeFile*> FileHandler::fileList;
 //It only exists to force initalization This function
 //scans for files that exist, notes which exist, 
 //and creates any necessary files that don't.
-FileHandler::FileHandler(const int masterPipe[], const int internalPipe[]) {
+FileHandler::FileHandler() {
 
-    //Initalize pipe
-    pipe[1] = masterPipe[1];    
-    pipe[0] = internalPipe[0];
 
-	//Create required server files
-	fileList[logFile] = new SafeFile(logFile);
-	fileList[infoFile] = new SafeFile(infoFile);
-	fileList[userFile] = new SafeFile(userFile);
+	//TODO
+
+
+
 }
 
 
