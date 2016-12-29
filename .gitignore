@@ -31,3 +31,7 @@ Pi-File-Server.xcodeproj/*
 *.out
 *.out.dSYM/*
 *.app
+
+# Ignore build
+*/build/*
+

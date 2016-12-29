@@ -30,7 +30,7 @@ void FileHandler::setup() {
 	destroy(); 
 
 	//Allocate shared memory
-	segment = new managed_shared_memory(create_only, SHARED_MEM_NAME, SHARE_MEM_SIZE);
+	FileHandler::segment = new managed_shared_memory(create_only, SHARED_MEM_NAME, SHARE_MEM_SIZE);
 
 	//Create IntSet allocator
 	allocIntSet = new ShmemAllocator(segment->get_segment_manager());
@@ -95,7 +95,7 @@ void FileHandler::getWriteAccess(const std::string& s) {
 		if(!itemExists(s, true)) {
 		
 			//Create and initalize the file's shared memory
-			segment->construct<IntSet>((filePrefix+s).c_str()) (std::less<int>(), allocIntSet);
+			segment->construct<IntSet>((filePrefix+s).c_str()) (std::less<int>(), *allocIntSet);
 			named_mutex editM(open_or_create, (editMutexPrefix+s).c_str());
 			named_mutex wMutex(open_or_create, (wMutexPrefix+s).c_str());
 			wMutex.lock();

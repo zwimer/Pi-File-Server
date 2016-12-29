@@ -26,7 +26,7 @@ void Server::start() {
 	char buffer[BUFFER_SIZE+1]; buffer[BUFFER_SIZE] = 0;
     
 	//Loop and recieve data from the client
-	for(int n;n; n = (int)recv( sock, buffer, BUFFER_SIZE, 0 ) ) {
+	for(int n; (n = (int)recv( sock, buffer, BUFFER_SIZE, 0 ) ); ) {
 
 		//Check for errors or disconnects
         if (n < 0) Err("recv() failed");

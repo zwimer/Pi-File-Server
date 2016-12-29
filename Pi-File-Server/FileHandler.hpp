@@ -3,9 +3,6 @@
 
 #include "main.hpp"
 
-//Forward declearations
-class SafeFile;
-
 //A static class that handles file IO
 class FileHandler {
 public:
