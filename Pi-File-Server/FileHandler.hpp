@@ -1,6 +1,7 @@
 #ifndef FILE_HANDLER_HPP
 #define FILE_HANDLER_HPP
 
+#include "main.hpp"
 
 //Forward declearations
 class SafeFile;
@@ -8,22 +9,31 @@ class SafeFile;
 //A static class that handles file IO
 class FileHandler {
 public:
+
+	//Prevent instantiation
+	FileHandler() = delete;	
 	
 	//-------------------------Setup------------------------
 
-	//This function scans for files that exist, notes 
-	//which exist, and creates any necessary files that don't.
+	//These functions create and destroy shared memory
+	//to set up this class, and prevent shared leaks respectively
+
+	//This scans for files that exist, notes which 
+	//exist, and creates any necessary files that don't.
 	static void setup();
+
+	//This deletes all shared memory
+	static void destroy();
     
 	//------------------Blocking functions------------------
 
 	//Get permission to use a file
-	static void getWriteAccess();
-	static void getReadAccess();
+	static void getWriteAccess(const std::string& s);
+	static void getReadAccess(const std::string& s);
 
 	//Relinquish access
-	static void finishReading();
-	static void finishWriting();
+	static void finishReading(const std::string& s);
+	static void finishWriting(const std::string& s);
 
 	//--------------Blocking wrapper functions--------------
 
@@ -36,10 +46,21 @@ public:
 
 	//-------------------Const variables-------------------
 
+	//How to name interprocess items
+	static const std::string filePrefix;
+	static const std::string wMutexPrefix;
+	static const std::string editMutexPrefix;
+
 	//Required server files
 	static const std::string logFile;
-	static const std::string infoFile;
-	static const std::string userFile;
+	static const std::string fileList;
+	static const std::string userList;
+
+	//-----------------Non-const variables-----------------
+
+	//Needed for shared memory
+	static ShmemAllocator * allocIntSet;
+	static boost::interprocess::managed_shared_memory * segment;
 };
 
 #endif

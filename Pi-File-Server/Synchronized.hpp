@@ -1,6 +1,7 @@
 #ifndef SYNCHRONIZED_HPP
 #define SYNCHRONIZED_HPP
 
+#include <string>
 
 //To protect the global namespace
 namespace Synchronized {

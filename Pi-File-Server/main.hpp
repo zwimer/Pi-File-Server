@@ -3,6 +3,9 @@
 
 #include "Synchronized.hpp"
 
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/allocators/allocator.hpp>
+#include <boost/interprocess/containers/set.hpp>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -27,10 +30,17 @@ template <> struct __pow2<0> { enum { v = 1 }; };
 //Define define max number of sizes
 #define MAX_FILES ( pow2(24) )
 #define MAX_USERS ( pow2(4) )
-#define SHAR_MEM_SIZE (MAX_USERS*(MAX_FILE + 1024))
+#define SHARE_MEM_SIZE (MAX_USERS*(MAX_FILES + 1024))
 
 //Longest command supported
 #define COMMAND_MAX_LEN 63
+
+//Name of the master process
+#define MASTER_PROC_NAME "Master"
+
+//Helpful typedef
+typedef boost::interprocess::allocator<int, boost::interprocess::managed_shared_memory::segment_manager> ShmemAllocator;
+typedef boost::interprocess::set<int, std::less<int>, ShmemAllocator> IntSet;
 
 //For simplicity
 typedef unsigned int uint;

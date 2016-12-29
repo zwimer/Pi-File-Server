@@ -7,15 +7,15 @@ using namespace Synchronized;
 const int Server::BUFFER_SIZE = 16384; 
 
 //Constructor
-Server::Server(int s, int p) : sock(s), pNum(p) {
-    sstr s2; s2 << "Child server " << pNum << " has started.";
+Server::Server(int s) : sock(s) {
+    sstr s2; s2 << "Child server has started.";
     log(s2.str());
     start();
 }
 
 //Destructor
 Server::~Server() {
-    sstr s2; s2 << "Client disconnected from server #" << pNum << ".";
+    sstr s2; s2 << "Client disconnected from server.";
 	log(s2.str());
 }
 

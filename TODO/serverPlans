@@ -1,19 +1,14 @@
 Run on port forward it port
 	if ip is not local, require pre-existing user
 
-Fork with smart fork
-	safe fork sets up pipes
+Fork
 	ulimit
 
 Server thread but client thread only if command returned says no block
 	command class
 	limit to n
 
-Have thread in master fork
-	That syncronizes access of critical data
-	Make sync class
-
-Handshake at start
+Handshake on connect
 If no handshake, disp info to user about nc ip > e.zip; unzip, make 
 
 Different user levels, different privledges, each command has a priv and owner

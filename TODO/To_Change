@@ -1,0 +1,2 @@
+Read currently assumes the file exists when it is called and assumes user in user list
+On child death, remove that user from all files

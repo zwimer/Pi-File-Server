@@ -10,7 +10,7 @@ public:
 
 	//Constructor
 	Server() = delete;
-	Server(int s, int p);
+	Server(int s);
 	
 	//Destructor
 	~Server();
@@ -22,9 +22,6 @@ private:
 
 	//The fd this server will listen to
 	const int sock;
-
-    //The process number
-    const int pNum;
     
 	//Static constants for this class
 	static const int BUFFER_SIZE;

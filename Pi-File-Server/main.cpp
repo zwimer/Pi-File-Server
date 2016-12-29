@@ -23,7 +23,7 @@ void Err(const char *s) {
 void Assert(bool b, const char *s) { if (!b) Err(s); }
 
 //Fork, but check to see if failed
-void * safeFork() {
+int safeFork() {
 	int ret = fork();
 	Assert(ret != -1, "fork() failed");
 	return ret;
@@ -70,6 +70,18 @@ std::string me(const std::string s) {
 	return mem[ss.str()];
 }
 
+//Signal handler
+void signalHandler( int sig ) {
+
+	//If master process died, remove shared memory
+	if (me() == std::string(MASTER_PROC_NAME)) FileHandler::destroy(); 
+	
+	//Error
+	sstr s; s << "recieved signal " << sig << ".";
+	Err(s.str().c_str());
+}
+
+
 //Main
 int main(int argc, const char * argv[]) {
 
@@ -79,7 +91,7 @@ int main(int argc, const char * argv[]) {
 		Assert(isdigit(argv[1][i]), "Usage: ./a.out <port>");
 
 	//Settings
-	me("Master");
+	me(MASTER_PROC_NAME);
 	signal(SIGCHLD, SIG_IGN);
 
 	//Local variables
@@ -98,6 +110,7 @@ int main(int argc, const char * argv[]) {
     listen( sd, 5 );
     
     //Note that the master server is now up
+	FileHandler::setup();
 	sstr s; s << "Master server started; listening on port: " << port; log(s.str());
 
 	//Parent process: loop, Child: break
