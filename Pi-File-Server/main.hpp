@@ -17,11 +17,16 @@
 #include <sstream>
 #include <vector>
 
-//TODO
+//Debug mode, default on
 #ifndef NO_DEBUG
+
+//Useful for debugging
 #include <iostream>
 #include <libgen.h>
-#define LN std::cerr << basename((char*)__FILE__) << ": " << __LINE__ << " - "<< __PRETTY_FUNCTION__ << std::endl;
+
+//A macro that prints the line, file, and function, useful in debugging
+#define DBG std::cerr << basename((char*)__FILE__) << ": " << __LINE__ << " - "<< __PRETTY_FUNCTION__ << std::endl;
+
 #endif
 
 //Define pow2

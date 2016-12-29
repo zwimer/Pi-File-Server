@@ -51,6 +51,7 @@ void FileHandler::setup() {
 
 	TMP_MAC(fileList);
 	TMP_MAC(logFile);
+	named_mutex w(create_only, (wMutexPrefix+userList).c_str());
 
 	//TODO
 
@@ -116,7 +117,6 @@ inline bool itemExists(const std::string& s, const bool getAccess = true, int * 
 			if (index) *index = i; 
 			return true;
 		}
-		else std::cerr << "|" << files[i] << "| != |" << s << "|" << std::endl;
 
 	return false;
 }
@@ -124,10 +124,9 @@ inline bool itemExists(const std::string& s, const bool getAccess = true, int * 
 //Get permission to write to the file
 void FileHandler::getWriteAccess(const std::string& s) {
 
-LN
 	//If the file doesn't exist
 	if (!itemExists(s)) {
-LN
+
 		//Get write access to the file list
 		getWriteAccess(fileList);
 
@@ -152,14 +151,14 @@ LN
 
 	//If the file exists, lock it
 	else {
-LN
+
 		named_mutex wMutex(open_only, (wMutexPrefix+s).c_str());
 		wMutex.lock();
 	}
 
 	//Wait for there to be no readers
-	auto userList = *(segment->find<IntSet>((filePrefix+s).c_str()).first);
-	while (userList.size()) { usleep((int)10000); }
+	auto users = *(segment->find<IntSet>((filePrefix+s).c_str()).first);
+	while (users.size()) { usleep((int)10000); }
 }
 
 //Get permission to read a file
@@ -177,7 +176,6 @@ void FileHandler::getReadAccess(const std::string& s) {
 	named_mutex editM(open_only, (editMutexPrefix+s).c_str()); editM.lock();
 	(segment->find<IntSet>((filePrefix+s).c_str()).first)->insert(usr);
 	editM.unlock(); wMutex.unlock();
-LN
 }
 
 //Relinquish reading access to a file
@@ -227,7 +225,6 @@ const data FileHandler::read(const std::string& s) {
 inline void writeFn(const std::string& s, const char * d, int n) {
 
 	//Get write access
-LN
 	FileHandler::getWriteAccess(s);
     
     //Append data to the file
@@ -241,10 +238,24 @@ LN
 
 //Public wrappers to writeFn
 void FileHandler::write(const std::string& s, const data& d) {
-LN
 	writeFn( s, (char*) &d[0], (int)d.size() );
 }
 void FileHandler::write(const std::string& s, const std::string d) {
 	writeFn( s, (char*) &d[0], (int)d.size() );
+}
+
+//Add a user
+void FileHandler::addUser(const std::string& s) {
+
+	//Aquire ownership of userList
+	named_mutex m(open_only, (wMutexPrefix+userList).c_str()); m.lock();
+
+    //Append new user to the list 
+    std::ofstream outFile( userList, std::ios::binary | std::ios::app );
+    outFile.write( (s+"\n").c_str(), s.size()+1 );
+	outFile.close();
+
+	//Relinquish ownership of userList
+	m.unlock();
 }
 

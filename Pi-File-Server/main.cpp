@@ -80,7 +80,6 @@ void startMemoryDestroyingProc() {
 	//Parent, wait for server to die, then clean up
 	int ret; waitpid(rc, &ret, 0);
 	FileHandler::destroy();
-LN
 	exit(ret);
 }
 
@@ -118,13 +117,6 @@ int main(int argc, const char * argv[]) {
 	sstr s; s << "Master server started; listening on port: " << port; 
 	FileHandler::setup(); log(s.str());
 
-//TODO: delete
-std::cout << "---END---" << std::endl;
-exit(0);
-
-
-
-
 	//Parent process: loop, Child: break
 	for(int i = 1; i; i = safeFork()) {
 
@@ -136,6 +128,9 @@ exit(0);
 		s.str(""); s << "Received incoming connection from: ";
 		s << inet_ntoa( (struct in_addr)client.sin_addr ); log(s.str());
     }
+
+	//Register this child as a new user
+	FileHandler::addUser(me());
 
 	//Child: Start the server, exit when server quits
 	Server a(sock); return EXIT_SUCCESS;

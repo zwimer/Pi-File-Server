@@ -41,6 +41,9 @@ public:
 	static void write(const std::string& s, const data& d);
 	static void write(const std::string& s, const std::string d);
 
+	//Add a user to the user list
+	static void addUser(const std::string& s);
+
 	//-------------------Const variables-------------------
 
 	//How to name interprocess items
