@@ -67,5 +67,6 @@ int main ()
 	}
 
 	//Exit
+	perror("");	
 	return 0;
 }

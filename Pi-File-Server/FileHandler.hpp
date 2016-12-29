@@ -53,6 +53,8 @@ public:
 	static const std::string fileList;
 	static const std::string userList;
 
+private:
+
 	//-----------------Non-const variables-----------------
 
 	//Needed for shared memory

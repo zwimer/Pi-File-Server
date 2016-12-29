@@ -70,17 +70,19 @@ std::string me(const std::string s) {
 	return mem[ss.str()];
 }
 
-//Signal handler
-void signalHandler( int sig ) {
+//Prevent shared memory leaks
+void startMemoryDestroyingProc() {
 
-	//If master process died, remove shared memory
-	if (me() == std::string(MASTER_PROC_NAME)) FileHandler::destroy(); 
-	
-	//Error
-	sstr s; s << "recieved signal " << sig << ".";
-	Err(s.str().c_str());
+	//Fork, child return
+	pid_t rc = safeFork();
+	if (!rc) return;
+
+	//Parent, wait for server to die, then clean up
+	int ret; waitpid(rc, &ret, 0);
+	FileHandler::destroy();
+LN
+	exit(ret);
 }
-
 
 //Main
 int main(int argc, const char * argv[]) {
@@ -89,6 +91,9 @@ int main(int argc, const char * argv[]) {
 	Assert(argc == 2, "Usage: ./a.out <port>");
 	for(int i = 0; argv[1][i]; i++)
 		Assert(isdigit(argv[1][i]), "Usage: ./a.out <port>");
+
+	//Prevent shared memory leaks
+	startMemoryDestroyingProc();
 
 	//Settings
 	me(MASTER_PROC_NAME);
@@ -108,10 +113,17 @@ int main(int argc, const char * argv[]) {
     Assert((sd = socket( PF_INET, SOCK_STREAM, 0 )) >= 0, "socket() failed");
     Assert(bind(sd,(struct sockaddr*)&svr,sizeof(svr))>= 0, "bind() failed");
     listen( sd, 5 );
-    
+
     //Note that the master server is now up
-	FileHandler::setup();
-	sstr s; s << "Master server started; listening on port: " << port; log(s.str());
+	sstr s; s << "Master server started; listening on port: " << port; 
+	FileHandler::setup(); log(s.str());
+
+//TODO: delete
+std::cout << "---END---" << std::endl;
+exit(0);
+
+
+
 
 	//Parent process: loop, Child: break
 	for(int i = 1; i; i = safeFork()) {

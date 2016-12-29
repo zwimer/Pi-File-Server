@@ -20,6 +20,8 @@
 //TODO
 #ifndef NO_DEBUG
 #include <iostream>
+#include <libgen.h>
+#define LN std::cerr << basename((char*)__FILE__) << ": " << __LINE__ << " - "<< __PRETTY_FUNCTION__ << std::endl;
 #endif
 
 //Define pow2
@@ -37,6 +39,7 @@ template <> struct __pow2<0> { enum { v = 1 }; };
 
 //Name of the master process
 #define MASTER_PROC_NAME "Master"
+
 
 //Helpful typedef
 typedef boost::interprocess::allocator<int, boost::interprocess::managed_shared_memory::segment_manager> ShmemAllocator;

@@ -14,6 +14,7 @@ void Synchronized::log(const std::string& s) {
 	sstr ss; ss << me() << s << ((s[s.size()-1] == '\n') ? "":"\n");
 
 	//Log the string
+LN
 	FileHandler::write(FileHandler::logFile, ss.str());
 }
 

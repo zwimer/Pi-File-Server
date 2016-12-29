@@ -19,12 +19,26 @@ const std::string FileHandler::logFile = "LogFile";
 const std::string FileHandler::fileList = "FileList";
 const std::string FileHandler::userList = "UserList";
 
+//Initalize shared memory pointers
+ShmemAllocator * FileHandler::allocIntSet = NULL;
+managed_shared_memory * FileHandler::segment = NULL;
 
 //-----------------------------------Setup----------------------------------
 
+//Create the file s' shared memory
+#define TMP_MAC(str) {\
+	segment->construct<IntSet>((filePrefix+str).c_str()) (std::less<int>(), *allocIntSet); \
+	named_mutex e(create_only, (editMutexPrefix+str).c_str()); \
+	named_mutex w(create_only, (wMutexPrefix+str).c_str()); \
+}
 
 //Set everything up
 void FileHandler::setup() {
+
+	//TODO
+    {std::ofstream o( logFile, std::ios::binary | std::ios::app ); o.close();}
+    {std::ofstream o( fileList, std::ios::binary ); o.write( (fileList+"\n").c_str() , 1+fileList.size() );  o.write( (logFile+"\n").c_str() , 1+logFile.size() );  o.close();}
+    {std::ofstream o( userList, std::ios::binary ); o.write( (me()+"\n").c_str() , 1+me().size() ); o.close();}
 
 	//Prevent memory name collision
 	destroy(); 
@@ -35,6 +49,8 @@ void FileHandler::setup() {
 	//Create IntSet allocator
 	allocIntSet = new ShmemAllocator(segment->get_segment_manager());
 
+	TMP_MAC(fileList);
+	TMP_MAC(logFile);
 
 	//TODO
 
@@ -43,7 +59,25 @@ void FileHandler::setup() {
 
 //Remove shared memory
 void FileHandler::destroy() {
+
+	//Remove all file's user lists
 	shared_memory_object::remove(SHARED_MEM_NAME);
+
+	//Read fileList
+	std::ifstream inFile( fileList, std::ios::binary );
+
+	//Remove userList ownership mutex
+	named_mutex::remove((wMutexPrefix+userList).c_str());
+
+	//Remove all shared memory
+	for(std::string s; getline(inFile, s); ) {
+		if (s == "") break;
+		named_mutex::remove((wMutexPrefix+s).c_str());
+		named_mutex::remove((editMutexPrefix+s).c_str());
+	}
+
+	//Close fileList
+	inFile.close();
 }
 
 
@@ -61,7 +95,7 @@ inline bool itemExists(const std::string& s, const bool getAccess = true, int * 
 
 	//Read the file list
 	if (getAccess && !index) FileHandler::getReadAccess(fileName);
-	std::ifstream f( s, std::ios::binary );
+	std::ifstream f( fileName, std::ios::binary );
 	std::string str((std::istreambuf_iterator<char>(f)),
 					 std::istreambuf_iterator<char>()); f.close();
 	if (getAccess && !index) FileHandler::finishReading(fileName);
@@ -78,16 +112,22 @@ inline bool itemExists(const std::string& s, const bool getAccess = true, int * 
 	//If found, set *index = i if needed,
 	//then return true. Otherwise, return false.
 	for(int i = 0; i < (int) files.size(); i++)
-		if (files[i] == s) { *index = i; return true; }
+		if (files[i] == s) { 
+			if (index) *index = i; 
+			return true;
+		}
+		else std::cerr << "|" << files[i] << "| != |" << s << "|" << std::endl;
+
 	return false;
 }
 
 //Get permission to write to the file
 void FileHandler::getWriteAccess(const std::string& s) {
 
+LN
 	//If the file doesn't exist
 	if (!itemExists(s)) {
-
+LN
 		//Get write access to the file list
 		getWriteAccess(fileList);
 
@@ -102,7 +142,7 @@ void FileHandler::getWriteAccess(const std::string& s) {
 
 			//Add the file to the fileList
 			std::ofstream outFile( s, std::ios::binary | std::ios::app );
-			outFile.write( s.data() , s.size() ); outFile.write( "\n", 1 );
+			outFile.write( (s+"\n").data() , 1 + s.size() );
 			outFile.close();
 		}
 
@@ -112,13 +152,14 @@ void FileHandler::getWriteAccess(const std::string& s) {
 
 	//If the file exists, lock it
 	else {
+LN
 		named_mutex wMutex(open_only, (wMutexPrefix+s).c_str());
 		wMutex.lock();
 	}
 
 	//Wait for there to be no readers
 	auto userList = *(segment->find<IntSet>((filePrefix+s).c_str()).first);
-	while (userList.size()) { sleep(.001); }
+	while (userList.size()) { usleep((int)10000); }
 }
 
 //Get permission to read a file
@@ -126,7 +167,9 @@ void FileHandler::getReadAccess(const std::string& s) {
 
 	//Get the user index
 	named_mutex uMutex(open_only, (wMutexPrefix+s).c_str()); uMutex.lock();
-	int usr; Assert(itemExists(s, true, &usr), "User doesn't exist!");
+	int usr; 
+
+	Assert(itemExists(me(), true, &usr), "User doesn't exist!");
 	uMutex.unlock();
 
 	//Add user index to this file's list of users safely
@@ -134,6 +177,7 @@ void FileHandler::getReadAccess(const std::string& s) {
 	named_mutex editM(open_only, (editMutexPrefix+s).c_str()); editM.lock();
 	(segment->find<IntSet>((filePrefix+s).c_str()).first)->insert(usr);
 	editM.unlock(); wMutex.unlock();
+LN
 }
 
 //Relinquish reading access to a file
@@ -141,7 +185,7 @@ void FileHandler::finishReading(const std::string& s) {
 
 	//Get the user index
 	named_mutex uMutex(open_only, (wMutexPrefix+s).c_str()); uMutex.lock();
-	int usr; Assert(itemExists(s, true, &usr), "User doesn't exist!");
+	int usr; Assert(itemExists(me(), true, &usr), "User doesn't exist!");
 	uMutex.unlock();
 
 	//Remove user from this file's list of users
@@ -183,6 +227,7 @@ const data FileHandler::read(const std::string& s) {
 inline void writeFn(const std::string& s, const char * d, int n) {
 
 	//Get write access
+LN
 	FileHandler::getWriteAccess(s);
     
     //Append data to the file
@@ -196,6 +241,7 @@ inline void writeFn(const std::string& s, const char * d, int n) {
 
 //Public wrappers to writeFn
 void FileHandler::write(const std::string& s, const data& d) {
+LN
 	writeFn( s, (char*) &d[0], (int)d.size() );
 }
 void FileHandler::write(const std::string& s, const std::string d) {
