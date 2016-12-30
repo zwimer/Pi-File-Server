@@ -47,7 +47,7 @@ std::string me(const std::string s) {
 	static std::map<std::string, std::string> mem;
 
 	//Create map key
-	sstr ss; ss << getpid() << ',' << pthread_self();
+	sstr ss; ss << getpid() << " " << pthread_self();
 
 	//If the process is not in the map, add it
 	if (mem.find(ss.str()) == mem.end()) {

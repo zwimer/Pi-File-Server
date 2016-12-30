@@ -18,7 +18,7 @@ Server::Server(int s) : sock(s) {
 Server::~Server() {
     sstr s2; s2 << "Client disconnected from server.";
 	FileHandler::userQuit(me());
-	//log(s2.str());
+	log(s2.str());
 }
 
 //The function that runs the server

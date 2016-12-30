@@ -1,6 +1,7 @@
 ### Aesthetics
 
 - Clarify comments
+- Restrict what can be put in me()
 - Document more about userList != file but is stored in file
 - Document more restrictions on file names
 	- Can't be empty
