@@ -66,7 +66,8 @@ std::string me(const std::string s) {
 		numThreads[(long)getpid()]++;	
 	}
 
-	//Return the id
+	//Return the id. Because of C++11 standards for
+	//strings, it is safe to return this local variable
 	return mem[ss.str()];
 }
 

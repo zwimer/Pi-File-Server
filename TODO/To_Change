@@ -1,2 +1,8 @@
 Read currently assumes the file exists when it is called and assumes user in user list
 On child death, remove that user from all files
+Need to order jobs
+Clarify comments
+Document more about userList != file but is stored in file
+getWriteAccess throw error if already have
+Allow not breaking when 1 user has multiple read access reqests on the same file, problem is in finish reading, it takes from all
+

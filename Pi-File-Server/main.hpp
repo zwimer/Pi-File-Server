@@ -37,7 +37,7 @@ template <> struct __pow2<0> { enum { v = 1 }; };
 //Define define max number of sizes
 #define MAX_FILES ( pow2(24) )
 #define MAX_USERS ( pow2(4) )
-#define SHARE_MEM_SIZE (MAX_USERS*(MAX_FILES + 1024))
+#define SHARE_MEM_SIZE (MAX_USERS*(4*MAX_FILES + 4*MAX_USERS + pow2(11)))
 
 //Longest command supported
 #define COMMAND_MAX_LEN 63

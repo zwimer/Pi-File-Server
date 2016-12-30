@@ -3,6 +3,9 @@
 
 #include "main.hpp"
 
+#include <mutex>
+#include <map>
+
 //A static class that handles file IO
 class FileHandler {
 public:
@@ -19,17 +22,24 @@ public:
 	//exist, and creates any necessary files that don't.
 	static void setup();
 
+	//-----------------------Clean up-----------------------
+
 	//This deletes all shared memory
 	static void destroy();
+
+	//Remove this user's file permissions
+	static void userQuit(const std::string& s);
     
 	//------------------Blocking functions------------------
 
 	//Get permission to use a file
+	//These functions may not be called on userList
 	static void getWriteAccess(const std::string& s);
 	static void getReadAccess(const std::string& s);
 
 	//Relinquish access
-	static void finishReading(const std::string& s);
+	//These functions may not be called on userList
+	static void finishReading(const std::string& s, std::string who = "");
 	static void finishWriting(const std::string& s);
 
 	//--------------Blocking wrapper functions--------------
@@ -48,6 +58,7 @@ public:
 
 	//How to name interprocess items
 	static const std::string filePrefix;
+	static const std::string userPrefix;
 	static const std::string wMutexPrefix;
 	static const std::string editMutexPrefix;
 

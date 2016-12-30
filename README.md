@@ -1,7 +1,7 @@
 # Pi-File-Server
 A little file server to be run on a raspberry pi
 
-## UNDER CONSTRUCTION
+## --- UNDER CONSTRUCTION ---
 
 
 ## Disclaimer
@@ -46,7 +46,7 @@ cmake ../Pi-File-Server/cmake && make
 
 Finally relocate a.out as follows
 ```bash
-mv a.out ../..
+mv a.out ../../
 ```
 
 ## Usage

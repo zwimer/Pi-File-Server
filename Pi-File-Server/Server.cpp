@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "FileHandler.hpp"
 
 //For ease of readability
 using namespace Synchronized;
@@ -16,7 +17,8 @@ Server::Server(int s) : sock(s) {
 //Destructor
 Server::~Server() {
     sstr s2; s2 << "Client disconnected from server.";
-	log(s2.str());
+	FileHandler::userQuit(me());
+	//log(s2.str());
 }
 
 //The function that runs the server
