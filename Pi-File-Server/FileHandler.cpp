@@ -55,6 +55,9 @@ void FileHandler::setup() {
 	Assert(!Finished, "FileHandler::setup() should only run once!");
 	Finished = true;
 
+	//Prevent memory name using previous memory 
+	destroy(); 
+
 	//TODO
 	string tmp = fileList+string("\n")+logFile+string("\n");
     ofstream o1( logFile, ios::binary | ios::app ); o1.close();
@@ -74,10 +77,10 @@ void FileHandler::setup() {
 	TMP_MAC(logFile);
 	named_mutex w(create_only, (wMutexPrefix+userList).c_str());
 
+cerr << me() << '\n';
 	addUser(me());
 
 	//TODO
-
 
 }
 
@@ -89,9 +92,9 @@ void FileHandler::setup() {
 void FileHandler::destroy() {
 
 	//Prevent multiple uses
-	static bool Finished = false;
-	Assert(!Finished, "FileHandler::destroy() should only run once!");
-	Finished = true;
+	static int Finished = 0;
+	Assert(Finished < 2, "FileHandler::destroy() should only run twice!");
+	Finished++;
 
 	//Remove all file's user lists
 	shared_memory_object::remove(SHARED_MEM_NAME);
@@ -182,7 +185,7 @@ void FileHandler::log(const string& s) {
 	sstr ss; ss << me() << s << ((s[s.size()-1] == '\n') ? "":"\n");
 	string str = ss.str();
 
-	//Log the string
+	//Log the string	
 	writeP( logFile, str.data(), (int)str.size(), false );
 }
 
@@ -297,7 +300,7 @@ void FileHandler::getReadAccessP(const string& s) {
 
 	//Get the user index
 	int i, usr; Assert((bool)itemExists(me(), true, &usr, true),
-		"User doesn't exist!");
+		"user doesn't exist!");
 
 	//Add user index to this file's list of users safely
 	named_mutex wMutex(open_only, (wMutexPrefix+s).c_str()); wMutex.lock();
@@ -314,7 +317,7 @@ void FileHandler::getReadAccessP(const string& s) {
 void FileHandler::finishReadingP(const string& s, const string& who) {
 
 	//Get the user index
-	int usr; Assert(itemExists(who, true, &usr, true), "User doesn't exist!");
+	int usr; Assert(itemExists(who, true, &usr, true), "user doesn't exist!");
 
 	//Remove user from this file's list of users
 	named_mutex editM(open_only, (editMutexPrefix+s).c_str()); editM.lock();
@@ -394,7 +397,7 @@ vector<string> * FileHandler::readAndParse(const string& fileName, const bool ge
 
 	//Finish reading
 	if (fileName == FileHandler::userList) m->unlock();
-	else if (getAccess) FileHandler::finishReadingP(fileName, "");
+	else if (getAccess) FileHandler::finishReadingP(fileName, me());
 
 	//Parse string
 	auto ret = new vector<string>();

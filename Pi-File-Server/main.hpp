@@ -24,7 +24,8 @@
 #include <libgen.h>
 
 //A macro that prints the line, file, and function, useful in debugging
-#define DBG std::cerr << basename((char*)__FILE__) << ": " << __LINE__ << " - "<< __PRETTY_FUNCTION__ << std::endl;
+#define DBG std::cerr << basename((char*)__FILE__) << ": " << __LINE__ \
+				<< " - "<< __PRETTY_FUNCTION__ << std::endl;
 
 #endif
 
@@ -32,6 +33,9 @@
 #define pow2(P) (__pow2<P>::v)
 template <int N> struct __pow2  { enum { v = 2 * pow2(N-1) }; };
 template <> struct __pow2<0> { enum { v = 1 }; };
+
+//The exit code thrown by Err
+#define ERR_EXIT_CODE 3
 
 //Define define max number of sizes
 #define MAX_FILES ( pow2(24) )

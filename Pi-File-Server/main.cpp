@@ -17,7 +17,7 @@ int min(const int a, const int b) {
 //A function used if an assert fails
 void Err(const char *s) {
     std::cout << "Error " << s << std::endl;
-    perror("Perror"); exit(EXIT_FAILURE);
+    perror("Perror"); exit(ERR_EXIT_CODE);
 }
 
 //A function used to test assertions
@@ -76,10 +76,11 @@ std::string me(const std::string s) {
 
 
 //Prevent shared memory leaks
-void preventSharedLeaks( int sig ) {
+void preventSharedLeaks( int sig = 0 ) {
 
-	//Static variables
+	//Local variables
 	static pid_t pid = 0;
+	int retCode = ERR_EXIT_CODE;	
 
 	//If sig (pid > 0 for safety), kill child
 	if (sig && pid > 0) kill(pid, SIGKILL);
@@ -96,13 +97,18 @@ void preventSharedLeaks( int sig ) {
 		signal(SIGINT, preventSharedLeaks);
 
 		//Wait for server to die
-		waitpid(pid, &sig, 0);
+		waitpid(pid, &retCode, 0);
 	}
 
 	//Cleanup
 	FileHandler::destroy();
-	if (!sig || sig == SIGINT) exit(0);
-	else Err("");
+
+	//Perror if needed
+	if (sig && sig != SIGINT && retCode != ERR_EXIT_CODE) perror("");
+	
+	//Exit with the proper code
+	if (sig != 0 && sig != SIGINT) exit(sig);
+	exit(retCode);
 }
 
 
@@ -115,8 +121,8 @@ int main(int argc, const char * argv[]) {
 		Assert(isdigit(argv[1][i]), "Usage: ./a.out <port>");
 
 	//Setup
+	preventSharedLeaks();
 	me(MASTER_PROC_NAME);
-	preventSharedLeaks(0);
 	signal(SIGCHLD, SIG_IGN);
 
 	//Local variables
