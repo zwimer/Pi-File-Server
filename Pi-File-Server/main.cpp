@@ -72,16 +72,33 @@ std::string me(const std::string s) {
 }
 
 //Prevent shared memory leaks
-void startMemoryDestroyingProc() {
+void preventSharedLeaks( int sig ) {
 
-	//Fork, child return
-	pid_t rc = safeFork();
-	if (!rc) return;
+	//Static variables
+	static pid_t pid = 0;
 
-	//Parent, wait for server to die, then clean up
-	int ret; waitpid(rc, &ret, 0);
+	//If sig (pid > 0 for safety), kill child
+	if (sig && pid > 0) kill(pid, SIGKILL);
+	else if (sig) Err("pid <= 0. THIS SHOULD NEVER HAPPEN!!!");
+	
+	//Otherwise
+	else {
+
+		//Fork, child return
+		pid = safeFork();
+		if (!pid) return;
+
+		//Parent: redirect sig-int to this function
+		signal(SIGINT, preventSharedLeaks);
+
+		//Wait for server to die
+		waitpid(pid, &sig, 0);
+	}
+
+	//Cleanup
 	FileHandler::destroy();
-	exit(ret);
+	if (!sig || sig == SIGINT) exit(0);
+	else Err("");
 }
 
 //Main
@@ -93,7 +110,7 @@ int main(int argc, const char * argv[]) {
 		Assert(isdigit(argv[1][i]), "Usage: ./a.out <port>");
 
 	//Prevent shared memory leaks
-	startMemoryDestroyingProc();
+	preventSharedLeaks(0);
 
 	//Settings
 	me(MASTER_PROC_NAME);
@@ -116,7 +133,7 @@ int main(int argc, const char * argv[]) {
 
     //Note that the master server is now up
 	sstr s; s << "Master server started; listening on port: " << port; 
-	FileHandler::setup(); log(s.str());
+	FileHandler::setup(); log(s);
 
 	//Parent process: loop, Child: break
 	for(int i = 1; i; i = safeFork()) {
@@ -127,7 +144,7 @@ int main(int argc, const char * argv[]) {
 
 		//Log the new connection
 		s.str(""); s << "Received incoming connection from: ";
-		s << inet_ntoa( (struct in_addr)client.sin_addr ); log(s.str());
+		s << inet_ntoa( (struct in_addr)client.sin_addr ); log(s);
     }
 
 	//Register this child as a new user

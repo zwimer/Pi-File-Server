@@ -116,8 +116,8 @@ void FileHandler::userQuit(const string& s) {
 
 	//Revoke access to each file
 	for( int i : users ) {
-		if (i > 0) finishReading((*files)[i-1], s);
-		else finishWriting((*files)[-i-1]);
+		if (i > 0) finishReadingP((*files)[i-1], s);
+		else finishWritingP((*files)[-i-1]);
 	}
 
 	//Prevent leaks
@@ -141,7 +141,7 @@ inline vector<string> * readAndParse(const string& fileName, const bool getAcces
 		m = new named_mutex(open_only, (FileHandler::wMutexPrefix+fileName).c_str());
 		m->lock();
 	}
-	else if (getAccess) FileHandler::getReadAccess(fileName);
+	else if (getAccess) FileHandler::getReadAccessP(fileName);
 
 	//Read the file
 	ifstream f( fileName, ios::binary );
@@ -149,7 +149,7 @@ inline vector<string> * readAndParse(const string& fileName, const bool getAcces
 
 	//Finish reading
 	if (fileName == FileHandler::userList) m->unlock();
-	else if (getAccess) FileHandler::finishReading(fileName);
+	else if (getAccess) FileHandler::finishReadingP(fileName);
 
 	//Parse string
 	auto ret = new vector<string>();
@@ -189,7 +189,7 @@ inline bool itemExists(const string& s, const bool getAccess = true,
 }
 
 //Get permission to write to the file
-void FileHandler::getWriteAccess(const string& s) {
+void FileHandler::getWriteAccessP(const string& s) {
 
 	//File index
 	int i;
@@ -198,28 +198,28 @@ void FileHandler::getWriteAccess(const string& s) {
 	if (!itemExists(s, true, &i)) {
 
 		//Get write access to the file list
-		getWriteAccess(fileList);
+		getWriteAccessP(fileList);
 
 		//Re-Check to see if file exists, if not, make it
-		if(!itemExists(s, true, &i)) {
+		if(!itemExists(s, false, &i)) {
+
+			//Add the file to the fileList
+			ofstream outFile( fileList, ios::binary | ios::app );
+			outFile.write( (s+"\n").data() , 1 + s.size() );
+			outFile.close();
 		
 			//Create and initalize the file's shared memory
 			segment->construct<IntSet>((filePrefix+s).c_str()) (less<int>(), *allocIntSet);
-			named_mutex editM(open_or_create, (editMutexPrefix+s).c_str());
-			named_mutex wMutex(open_or_create, (wMutexPrefix+s).c_str());
+			named_mutex editM(create_only, (editMutexPrefix+s).c_str());
+			named_mutex wMutex(create_only, (wMutexPrefix+s).c_str());
 			wMutex.lock();
 
-			//Add the file to the fileList
-			ofstream outFile( s, ios::binary | ios::app );
-			outFile.write( (s+"\n").data() , 1 + s.size() );
-			outFile.close();
-
 			//Check for errors
-			Assert(itemExists(s, true, &i), "getWriteAccess() failed");
+			Assert(itemExists(s, false, &i), "getWriteAccessP() failed");
 		}
 
 		//Relinquish write access
-		finishWriting(fileList);
+		finishWritingP(fileList);
 	}
 
 	//If the file exists, lock it
@@ -237,7 +237,7 @@ void FileHandler::getWriteAccess(const string& s) {
 }
 
 //Get permission to read a file
-void FileHandler::getReadAccess(const string& s) {
+void FileHandler::getReadAccessP(const string& s) {
 
 	//Get the user index
 	int i, usr; Assert((bool)itemExists(me(), true, &usr, true), "User doesn't exist!");
@@ -249,12 +249,12 @@ void FileHandler::getReadAccess(const string& s) {
 	editM.unlock(); wMutex.unlock();
 
 	//Record the user's access to this file
-	Assert(itemExists(s, false, &i), "getReadAccess called without access");
+	Assert(itemExists(s, false, &i), "getReadAccessP called without access");
 	(segment->find<IntSet>((userPrefix+me()).c_str()).first)->insert(i+1);
 }
 
 //Relinquish reading access to a file
-void FileHandler::finishReading(const string& s, string who) {
+void FileHandler::finishReadingP(const string& s, string who) {
 
 	//Determine who
 	if (who == "") who = me();
@@ -274,18 +274,18 @@ void FileHandler::finishReading(const string& s, string who) {
 	else if (s == logFile) i = 1;
 
 	//Record the user's loss of access to this file
-	else Assert(itemExists(s, true, &i), "finishReading called on bad file");
+	else Assert(itemExists(s, true, &i), "finishReadingP called on bad file");
 	(segment->find<IntSet>((userPrefix+who).c_str()).first)->erase(i+1);
 }
 
 //Relinquish writing access to a file
-void FileHandler::finishWriting(const string& s) {
+void FileHandler::finishWritingP(const string& s) {
 
 	//Relinquish writing access to a file
 	named_mutex wMutex(open_only, (wMutexPrefix+s).c_str()); wMutex.unlock();
 
 	//Record the user's loss of access to this file
-	int i; Assert(itemExists(s, true, &i), "finishWriting called on bad file");
+	int i; Assert(itemExists(s, true, &i), "finishWritingP called on bad file");
 	(segment->find<IntSet>((userPrefix+me()).c_str()).first)->erase(-(i+1));
 }
 
@@ -297,7 +297,7 @@ void FileHandler::finishWriting(const string& s) {
 const data FileHandler::read(const string& s) {
 
 	//Get read access
-	getReadAccess(s);
+	getReadAccessP(s);
 
 	//Read data in
 	ifstream inFile( s, ios::binary );
@@ -306,7 +306,7 @@ const data FileHandler::read(const string& s) {
 	inFile.close();
 
 	//Relinquish access
-	finishReading(s);
+	finishReadingP(s);
 	
 	//Return data
 	return ret;	
@@ -314,26 +314,33 @@ const data FileHandler::read(const string& s) {
 
 
 //Write data to a file
-inline void writeFn(const string& s, const char * d, int n) {
+inline void writeFn(const string& s, const char * d, const int n, const bool app = true) {
 
 	//Get write access
-	FileHandler::getWriteAccess(s);
+	FileHandler::getWriteAccessP(s);
     
     //Append data to the file
-    ofstream outFile( s, ios::binary | ios::app );
-    outFile.write( d , n*sizeof(char) );
+	auto mode = app ? (ios::binary | ios::app) : ios::binary;
+    ofstream outFile( s, mode );
+    outFile.write( d , n );
 	outFile.close();
 
 	//Relinquish access
-	FileHandler::finishWriting(s);
+	FileHandler::finishWritingP(s);
 }
 
 //Public wrappers to writeFn
-void FileHandler::write(const string& s, const data& d) {
+void FileHandler::append(const string& s, const data& d) {
 	writeFn( s, (char*) &d[0], (int)d.size() );
 }
-void FileHandler::write(const string& s, const string d) {
+void FileHandler::append(const string& s, const string d) {
 	writeFn( s, (char*) &d[0], (int)d.size() );
+}
+void FileHandler::overWrite(const string& s, const data& d) {
+	writeFn( s, (char*) &d[0], (int)d.size(), false );
+}
+void FileHandler::overWrite(const string& s, const string d) {
+	writeFn( s, (char*) &d[0], (int)d.size(), false );
 }
 
 //Add a user

@@ -10,7 +10,7 @@ const int Server::BUFFER_SIZE = 16384;
 //Constructor
 Server::Server(int s) : sock(s) {
     sstr s2; s2 << "Child server has started.";
-    log(s2.str());
+    log(s2);
     start();
 }
 
@@ -18,7 +18,7 @@ Server::Server(int s) : sock(s) {
 Server::~Server() {
     sstr s2; s2 << "Client disconnected from server.";
 	FileHandler::userQuit(me());
-	log(s2.str());
+	log(s2);
 }
 
 //The function that runs the server
@@ -38,5 +38,10 @@ void Server::start() {
 		log(std::string(buffer, 0, min(n, COMMAND_MAX_LEN)));
 
 		log("THIS WILL BE IMPLEMENTED WHERE IT READS THE COMMANDS THEN LOOKS THROUGH THAT FOLDER");
+
+		std::string f = "TestFile", c = "This is a test!";
+		sstr s; s << "Wrote '" << c << "' to file: " << f; log(s);
+		FileHandler::overWrite(f,c);
+
 	}
 }

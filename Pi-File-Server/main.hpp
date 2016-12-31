@@ -15,6 +15,7 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <sstream>
+#include <string>
 #include <vector>
 
 //Debug mode, default on

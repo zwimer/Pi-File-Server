@@ -1,9 +1,5 @@
-Useful debug
-
-Use a scope guard on EDQ
-
 //Use these two
-#define FN BL qqq:sce __som_var__;
+#define FN BL qqq::sce __som_var__;
 #define IL cerr << string(qqq::i*4, ' ');
 
 //Lower level
@@ -14,7 +10,8 @@ Use a scope guard on EDQ
 namespace qqq {
 #include "/Users/zwimer/School/Other/FunCode/C/myLib.h"
 #include "/Users/zwimer/School/Other/FunCode/C/myLib.c"
-class sce {public: sce(){} ~sce(){EL}};
+class sce {public: sce(){} ~sce();};
 int i = 0;
 }
+qqq::sce::~sce(){qqq::i--;cerr << string(i*4, ' ') << "<---\n";}
 

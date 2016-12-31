@@ -1,7 +1,9 @@
 #include "Synchronized.hpp"
 #include "FileHandler.hpp"
 
+
 //Used to log an action
+void Synchronized::log(const std::stringstream& s) { log(s.str()); }
 void Synchronized::log(const char * s) { log(std::string(s)); }
 void Synchronized::log(const std::string& s) { 
 
@@ -14,6 +16,6 @@ void Synchronized::log(const std::string& s) {
 	sstr ss; ss << me() << s << ((s[s.size()-1] == '\n') ? "":"\n");
 
 	//Log the string
-	FileHandler::write(FileHandler::logFile, ss.str());
+	FileHandler::append(FileHandler::logFile, ss.str());
 }
 
