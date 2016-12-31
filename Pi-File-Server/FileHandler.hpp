@@ -104,8 +104,8 @@ private:
 	static void finishWritingP(const std::string& s);
 
 	//Write data to a file
-	static void writeP(const std::string& s, const char * d,
-						const int n, const bool app = true);
+	static void writeP(const std::string& s, const char * d, const int n,
+						const bool safe, const bool app = true);
 
 	//-------------------Helper functions-------------------
 

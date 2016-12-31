@@ -311,6 +311,9 @@ void FileHandler::finishWritingP(const string& s) {
 //Read data from a file
 const data FileHandler::read(const string& s) {
 
+	//Check usage
+	Assert(legalFile(s), "cannot read this file!");
+
 	//Get read access
 	getReadAccessP(s);
 
@@ -327,9 +330,33 @@ const data FileHandler::read(const string& s) {
 	return ret;	
 }
 
+//Get permission to use a file
+void FileHandler::getWriteAccess(const std::string& s) {
+	Assert(legalFile(s), "cannot call getWriteAccess on this file!");
+	getWriteAccessP(s);
+}
+void FileHandler::getReadAccess(const std::string& s) {
+	Assert(legalFile(s), "cannot call getReadAccess on this file!");
+	getReadAccessP(s);
+}
+
+//Relinquish access
+void FileHandler::finishReading(const std::string& s, std::string w) {
+	Assert(legalFile(s), "cannot call finishWriting on this file!");
+	finishReadingP(s, w);
+}
+void FileHandler::finishWriting(const std::string& s) {
+	Assert(legalFile(s), "cannot call finishReading on this file!");
+	finishWritingP(s);
+}
+
 
 //Write data to a file
-void FileHandler::writeP(const string& s, const char * d, const int n, const bool app) {
+void FileHandler::writeP(const string& s, const char * d, const int n,
+							const bool safe, const bool app) {
+
+	//Check usage
+	if (safe) Assert(legalFile(s), "cannot write to this file!");
 
 	//Get write access
 	FileHandler::getWriteAccessP(s);
@@ -359,21 +386,21 @@ void FileHandler::log(const string& s) {
 	string str = ss.str();
 
 	//Log the string
-	writeP( logFile, str.data(), (int)str.size() );
+	writeP( logFile, str.data(), (int)str.size(), false );
 }
 
 //Public wrappers to writeFn
 void FileHandler::append(const string& s, const data& d) {
-	writeP( s, (char*) &d[0], (int)d.size() );
+	writeP( s, (char*) &d[0], (int)d.size(), true );
 }
 void FileHandler::append(const string& s, const string d) {
-	writeP( s, (char*) &d[0], (int)d.size() );
+	writeP( s, (char*) &d[0], (int)d.size(), true );
 }
 void FileHandler::overWrite(const string& s, const data& d) {
-	writeP( s, (char*) &d[0], (int)d.size(), false );
+	writeP( s, (char*) &d[0], (int)d.size(), true, false );
 }
 void FileHandler::overWrite(const string& s, const string d) {
-	writeP( s, (char*) &d[0], (int)d.size(), false );
+	writeP( s, (char*) &d[0], (int)d.size(), true, false );
 }
 
 //Add a user
