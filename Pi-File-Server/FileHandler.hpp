@@ -1,7 +1,7 @@
 #ifndef FILE_HANDLER_HPP
 #define FILE_HANDLER_HPP
 
-#include "main.hpp"
+#include "Server.hpp"
 
 #include <mutex>
 #include <map>
@@ -40,6 +40,10 @@ public:
 	//Prevent instantiation
 	FileHandler() = delete;	
 	
+	//Friend functions
+	friend Server::~Server();
+	friend void preventSharedLeaks(int);
+	
 	//-------------------------Setup------------------------
 
 	//These functions create and destroy shared memory
@@ -49,15 +53,6 @@ public:
 	//exist, and creates any necessary files that don't.
 	static void setup();
 
-	//-----------------------Clean up-----------------------
-
-	//TODO: make this all private
-	//This deletes all shared memory
-	static void destroy();
-
-	//Remove this user's file permissions
-	static void userQuit(const std::string& s);
-    
 	//------------------Blocking functions------------------
 
 	//Get permission to use a file
@@ -71,9 +66,9 @@ public:
 	//--------------Blocking wrapper functions--------------
 
 	//Used to log an action
+	static void log(const sstr& s);
 	static void log(const char * s);
 	static void log(const std::string& s);
-	static void log(const std::stringstream& s);
 
 	//Read data from a file
 	static const data read(const std::string& s);
@@ -89,6 +84,14 @@ public:
 
 private:
 
+	//-----------------------Clean up-----------------------
+
+	//This deletes all shared memory
+	static void destroy();
+
+	//Remove this user's file permissions
+	static void userQuit(const std::string& s);
+    
 	//--------------Blocking 'worker' functions-------------
 
 	//These functions may not be called on userList
@@ -98,9 +101,7 @@ private:
 	static void getReadAccessP(const std::string& s);
 
 	//Relinquish access
-	static void finishReadingP(const std::string& s, std::string who = "");
-
-	//TODO static void finishReadingP(const std::string& s, std::string& who);
+	static void finishReadingP(const std::string& s, const std::string& who);
 	static void finishWritingP(const std::string& s);
 
 	//Write data to a file
@@ -125,16 +126,16 @@ private:
 
 	//-------------------Const variables-------------------
 
+	//Required server files
+	static const std::string logFile;
+	static const std::string fileList;
+	static const std::string userList;
+
 	//How to name interprocess items
 	static const std::string filePrefix;
 	static const std::string userPrefix;
 	static const std::string wMutexPrefix;
 	static const std::string editMutexPrefix;
-
-	//Required server files
-	static const std::string logFile;
-	static const std::string fileList;
-	static const std::string userList;
 
 	//-----------------Non-const variables-----------------
 

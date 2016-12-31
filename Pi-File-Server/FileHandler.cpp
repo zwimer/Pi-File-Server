@@ -26,6 +26,7 @@ const string FileHandler::userList = "UserList";
 ShmemAllocator * FileHandler::allocIntSet = NULL;
 managed_shared_memory * FileHandler::segment = NULL;
 
+
 /*	A quick note. Shared memory user's file lists are formated as follows
 	
 	if (reading access) set contains (index + 1)
@@ -36,9 +37,6 @@ managed_shared_memory * FileHandler::segment = NULL;
 */
 
 
-bool FileHandler::legalFile( const string& s ) {
-	return (s != logFile) && (s != fileList) && (s != userList);
-}
 //-----------------------------------Setup----------------------------------
 
 
@@ -143,65 +141,108 @@ void FileHandler::userQuit(const string& s) {
 //----------------------------Blocking functions----------------------------
 
 
-//Read and parse file
-vector<string> * FileHandler::readAndParse(const string& fileName, const bool getAccess) {
+//Get permission to use a file
+void FileHandler::getWriteAccess(const std::string& s) {
+	Assert(legalFile(s), "cannot call getWriteAccess on this file!");
+	getWriteAccessP(s);
+}
+void FileHandler::getReadAccess(const std::string& s) {
+	Assert(legalFile(s), "cannot call getReadAccess on this file!");
+	getReadAccessP(s);
+}
+
+//Relinquish access
+void FileHandler::finishReading(const std::string& s, std::string who) {
+	//Determine who
+	if (who == "") who = me();
+
+	Assert(legalFile(s), "cannot call finishWriting on this file!");
+	finishReadingP(s, who);
+}
+void FileHandler::finishWriting(const std::string& s) {
+	Assert(legalFile(s), "cannot call finishReading on this file!");
+	finishWritingP(s);
+}
+
+
+//------------------------Blocking wrapper functions------------------------
+
+
+//Used to log an action
+void FileHandler::log(const sstr& s) { log(s.str()); }
+void FileHandler::log(const char * s) { log(string(s)); }
+void FileHandler::log(const string& s) { 
+
+	//Check use
+	Assert(s.size(), "trying to log an empty string");
+	Assert(s.find('\n') == string::npos || s.find('\n') == (s.size()-1), 
+			"trying to log a string with a new line");
+
+	//Format string
+	sstr ss; ss << me() << s << ((s[s.size()-1] == '\n') ? "":"\n");
+	string str = ss.str();
+
+	//Log the string
+	writeP( logFile, str.data(), (int)str.size(), false );
+}
+
+//Read data from a file
+const data FileHandler::read(const string& s) {
 
 	//Check usage
-	if (fileName == FileHandler::userList)
-		Assert(getAccess, "User file is a special file. Ownership should always be aquired");
+	Assert(legalFile(s), "cannot read this file!");
 
-	//Get permission to read the file
-	named_mutex * m = NULL;
-	if (fileName == FileHandler::userList) {
-		m = new named_mutex(open_only, (FileHandler::wMutexPrefix+fileName).c_str());
-		m->lock();
-	}
-	else if (getAccess) FileHandler::getReadAccessP(fileName);
+	//Get read access
+	getReadAccessP(s);
 
-	//Read the file
-	ifstream f( fileName, ios::binary );
-	string str((istreambuf_iterator<char>(f)), istreambuf_iterator<char>()); f.close();
+	//Read data in
+	ifstream inFile( s, ios::binary );
+	data ret( (istreambuf_iterator<char>(inFile)), 
+              (istreambuf_iterator<char>()) );
+	inFile.close();
 
-	//Finish reading
-	if (fileName == FileHandler::userList) m->unlock();
-	else if (getAccess) FileHandler::finishReadingP(fileName);
-
-	//Parse string
-	auto ret = new vector<string>();
-	for(int i=0,k=0; k < (int) str.size(); k++)
-		if (str[k] == '\n') {
-			ret->push_back(str.substr(i,k-i));
-			i = k+1;
-		}
-
-	//Return the result
-	return ret;
+	//Relinquish access
+	finishReading(s);
+	
+	//Return data
+	return ret;	
 }
 
-//Check if an item exists in file f (either userList or fileList)
-//If index != NULL, the index the items is at will be stored in index
-//and userList will be used instead of fileList. If getAccess, and we
-//are reading from the fileList, get read access before reading the file
-bool FileHandler::itemExists(const string& s, const bool getAccess, 
-								int * index, bool usrLst) {
-
-	//Determine which file to use
-	string fileName = usrLst ? FileHandler::userList : FileHandler::fileList;
-
-	//Read and parse the file
-	unique_ptr<vector<string> > files(readAndParse(fileName, getAccess));
-
-	//Serach file list for the file
-	//If found, set *index = i if needed, then return true
-	for(int i = 0; i < (int) files->size(); i++)
-		if ((*files)[i] == s) { 
-			if (index) *index = i; 
-			return true;
-		}
-
-	//Prevent leaks and fail
-	return false;
+//Public wrappers to writeFn
+void FileHandler::append(const string& s, const data& d) {
+	writeP( s, (char*) &d[0], (int)d.size(), true );
 }
+void FileHandler::append(const string& s, const string d) {
+	writeP( s, (char*) &d[0], (int)d.size(), true );
+}
+void FileHandler::overWrite(const string& s, const data& d) {
+	writeP( s, (char*) &d[0], (int)d.size(), true, false );
+}
+void FileHandler::overWrite(const string& s, const string d) {
+	writeP( s, (char*) &d[0], (int)d.size(), true, false );
+}
+
+//Add a user
+void FileHandler::addUser(const string& s) {
+
+	//Aquire ownership of userList
+	named_mutex m(open_only, (wMutexPrefix+userList).c_str()); m.lock();
+
+    //Append new user to the list 
+    ofstream outFile( userList, ios::binary | ios::app );
+    outFile.write( (s+"\n").c_str(), 1+s.size() );
+	outFile.close();
+
+	//Create user's file list
+	segment->construct<IntSet>((userPrefix+s).c_str()) (less<int>(), *allocIntSet);
+
+	//Relinquish ownership of userList
+	m.unlock();
+}
+
+
+//------------------------Blocking 'worker' functions-----------------------
+
 
 //Get permission to write to the file
 void FileHandler::getWriteAccessP(const string& s) {
@@ -255,7 +296,8 @@ void FileHandler::getWriteAccessP(const string& s) {
 void FileHandler::getReadAccessP(const string& s) {
 
 	//Get the user index
-	int i, usr; Assert((bool)itemExists(me(), true, &usr, true), "User doesn't exist!");
+	int i, usr; Assert((bool)itemExists(me(), true, &usr, true),
+		"User doesn't exist!");
 
 	//Add user index to this file's list of users safely
 	named_mutex wMutex(open_only, (wMutexPrefix+s).c_str()); wMutex.lock();
@@ -269,10 +311,7 @@ void FileHandler::getReadAccessP(const string& s) {
 }
 
 //Relinquish reading access to a file
-void FileHandler::finishReadingP(const string& s, string who) {
-
-	//Determine who
-	if (who == "") who = me();
+void FileHandler::finishReadingP(const string& s, const string& who) {
 
 	//Get the user index
 	int usr; Assert(itemExists(who, true, &usr, true), "User doesn't exist!");
@@ -304,53 +343,6 @@ void FileHandler::finishWritingP(const string& s) {
 	(segment->find<IntSet>((userPrefix+me()).c_str()).first)->erase(-(i+1));
 }
 
-
-//------------------------Blocking wrapper functions------------------------
-
-
-//Read data from a file
-const data FileHandler::read(const string& s) {
-
-	//Check usage
-	Assert(legalFile(s), "cannot read this file!");
-
-	//Get read access
-	getReadAccessP(s);
-
-	//Read data in
-	ifstream inFile( s, ios::binary );
-	data ret( (istreambuf_iterator<char>(inFile)), 
-              (istreambuf_iterator<char>()) );
-	inFile.close();
-
-	//Relinquish access
-	finishReadingP(s);
-	
-	//Return data
-	return ret;	
-}
-
-//Get permission to use a file
-void FileHandler::getWriteAccess(const std::string& s) {
-	Assert(legalFile(s), "cannot call getWriteAccess on this file!");
-	getWriteAccessP(s);
-}
-void FileHandler::getReadAccess(const std::string& s) {
-	Assert(legalFile(s), "cannot call getReadAccess on this file!");
-	getReadAccessP(s);
-}
-
-//Relinquish access
-void FileHandler::finishReading(const std::string& s, std::string w) {
-	Assert(legalFile(s), "cannot call finishWriting on this file!");
-	finishReadingP(s, w);
-}
-void FileHandler::finishWriting(const std::string& s) {
-	Assert(legalFile(s), "cannot call finishReading on this file!");
-	finishWritingP(s);
-}
-
-
 //Write data to a file
 void FileHandler::writeP(const string& s, const char * d, const int n,
 							const bool safe, const bool app) {
@@ -371,53 +363,73 @@ void FileHandler::writeP(const string& s, const char * d, const int n,
 	FileHandler::finishWritingP(s);
 }
 
-//Used to log an action
-void FileHandler::log(const char * s) { log(string(s)); }
-void FileHandler::log(const sstr& s) { log(s.str()); }
-void FileHandler::log(const string& s) { 
 
-	//Check use
-	Assert(s.size(), "trying to log an empty string");
-	Assert(s.find('\n') == string::npos || s.find('\n') == (s.size()-1), 
-			"trying to log a string with a new line");
+//-----------------------------Helper functions-----------------------------
 
-	//Format string
-	sstr ss; ss << me() << s << ((s[s.size()-1] == '\n') ? "":"\n");
-	string str = ss.str();
-
-	//Log the string
-	writeP( logFile, str.data(), (int)str.size(), false );
+bool FileHandler::legalFile( const string& s ) {
+	return (s != logFile) && (s != fileList) && (s != userList);
 }
 
-//Public wrappers to writeFn
-void FileHandler::append(const string& s, const data& d) {
-	writeP( s, (char*) &d[0], (int)d.size(), true );
+//-------------------------Blocking helper functions------------------------
+
+
+//Read and parse file
+vector<string> * FileHandler::readAndParse(const string& fileName, const bool getAccess) {
+
+	//Check usage
+	if (fileName == FileHandler::userList)
+		Assert(getAccess, "User file is a special file. Ownership should always be aquired");
+
+	//Get permission to read the file
+	named_mutex * m = NULL;
+	if (fileName == FileHandler::userList) {
+		m = new named_mutex(open_only, (FileHandler::wMutexPrefix+fileName).c_str());
+		m->lock();
+	}
+	else if (getAccess) FileHandler::getReadAccessP(fileName);
+
+	//Read the file
+	ifstream f( fileName, ios::binary );
+	string str((istreambuf_iterator<char>(f)), istreambuf_iterator<char>()); f.close();
+
+	//Finish reading
+	if (fileName == FileHandler::userList) m->unlock();
+	else if (getAccess) FileHandler::finishReadingP(fileName, "");
+
+	//Parse string
+	auto ret = new vector<string>();
+	for(int i=0,k=0; k < (int) str.size(); k++)
+		if (str[k] == '\n') {
+			ret->push_back(str.substr(i,k-i));
+			i = k+1;
+		}
+
+	//Return the result
+	return ret;
 }
-void FileHandler::append(const string& s, const string d) {
-	writeP( s, (char*) &d[0], (int)d.size(), true );
-}
-void FileHandler::overWrite(const string& s, const data& d) {
-	writeP( s, (char*) &d[0], (int)d.size(), true, false );
-}
-void FileHandler::overWrite(const string& s, const string d) {
-	writeP( s, (char*) &d[0], (int)d.size(), true, false );
-}
 
-//Add a user
-void FileHandler::addUser(const string& s) {
+//Check if an item exists in file f (either userList or fileList)
+//If index != NULL, the index the items is at will be stored in index
+//and userList will be used instead of fileList. If getAccess, and we
+//are reading from the fileList, get read access before reading the file
+bool FileHandler::itemExists(const string& s, const bool getAccess, 
+								int * index, bool usrLst) {
 
-	//Aquire ownership of userList
-	named_mutex m(open_only, (wMutexPrefix+userList).c_str()); m.lock();
+	//Determine which file to use
+	string fileName = usrLst ? FileHandler::userList : FileHandler::fileList;
 
-    //Append new user to the list 
-    ofstream outFile( userList, ios::binary | ios::app );
-    outFile.write( (s+"\n").c_str(), 1+s.size() );
-	outFile.close();
+	//Read and parse the file
+	unique_ptr<vector<string> > files(readAndParse(fileName, getAccess));
 
-	//Create user's file list
-	segment->construct<IntSet>((userPrefix+s).c_str()) (less<int>(), *allocIntSet);
+	//Serach file list for the file
+	//If found, set *index = i if needed, then return true
+	for(int i = 0; i < (int) files->size(); i++)
+		if ((*files)[i] == s) { 
+			if (index) *index = i; 
+			return true;
+		}
 
-	//Relinquish ownership of userList
-	m.unlock();
+	//Prevent leaks and fail
+	return false;
 }
 

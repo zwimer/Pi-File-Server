@@ -6,7 +6,10 @@
 #include <map>
 
 
-//Common functions
+//-----------------------Defined in main.hpp-----------------------
+
+
+//Min function
 int min(const int a, const int b) { 
 	return a < b ? a : b;
 }
@@ -33,7 +36,6 @@ void * safeMalloc(int s) {
 	Assert(ret, "malloc() failed");
 	return ret;
 }
-
 
 //Create a string unique to this thread of this process
 //If an argument is provided, make that the unqique
@@ -69,6 +71,10 @@ std::string me(const std::string s) {
 	return mem[ss.str()];
 }
 
+
+//------------------------Only for main.cpp------------------------
+
+
 //Prevent shared memory leaks
 void preventSharedLeaks( int sig ) {
 
@@ -99,7 +105,8 @@ void preventSharedLeaks( int sig ) {
 	else Err("");
 }
 
-//Main
+
+//Main function
 int main(int argc, const char * argv[]) {
 
 	//Check usage

@@ -5,7 +5,7 @@
 
 //A server that will handle
 //all requests made on fd sock
-class Server {
+class Server final {
 public:
 
 	//Constructor
