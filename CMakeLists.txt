@@ -9,10 +9,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -g")
 
 #Create a.out
 add_executable(a.out
-	main.cpp
-	Server.cpp
-	FileHandler.cpp
-	Synchronized.cpp )
+	Pi-File-Server/main.cpp
+	Pi-File-Server/Server.cpp
+	Pi-File-Server/FileHandler.cpp
+	Pi-File-Server/Synchronized.cpp )
 
 #Link pthreads
 target_link_libraries( a.out ${CMAKE_THREAD_LIBS_INIT} )

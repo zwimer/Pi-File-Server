@@ -81,15 +81,6 @@ void FileHandler::setup() {
 
 //---------------------------------Clean up---------------------------------
 
-#define BL cerr << string(qqq::i*4, ' '); DBG qqq::i++;
-#define EL qqq::i--;cerr << string(qqq::i*4, ' ') << "<---\n";
-namespace qqq {
-#include "/Users/zwimer/School/Other/FunCode/C/myLib.h"
-#include "/Users/zwimer/School/Other/FunCode/C/myLib.c"
-int i = 0;
-}
-
-
 
 //Remove shared memory
 void FileHandler::destroy() {

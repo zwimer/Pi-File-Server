@@ -1,0 +1,20 @@
+Useful debug
+
+Use a scope guard on EDQ
+
+//Use these two
+#define FN BL qqq:sce __som_var__;
+#define IL cerr << string(qqq::i*4, ' ');
+
+//Lower level
+#define BL cerr << string(qqq::i*4, ' '); DBG qqq::i++;
+#define EL qqq::i--;cerr << string(qqq::i*4, ' ') << "<---\n";
+
+//Protect global namespace
+namespace qqq {
+#include "/Users/zwimer/School/Other/FunCode/C/myLib.h"
+#include "/Users/zwimer/School/Other/FunCode/C/myLib.c"
+class sce {public: sce(){} ~sce(){EL}};
+int i = 0;
+}
+
