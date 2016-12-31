@@ -26,9 +26,6 @@ const string FileHandler::userList = "UserList";
 ShmemAllocator * FileHandler::allocIntSet = NULL;
 managed_shared_memory * FileHandler::segment = NULL;
 
-//Forward declerations
-inline vector<string> * readAndParse(const string&, const bool);
-
 /*	A quick note. Shared memory user's file lists are formated as follows
 	
 	if (reading access) set contains (index + 1)
@@ -39,6 +36,9 @@ inline vector<string> * readAndParse(const string&, const bool);
 */
 
 
+bool FileHandler::legalFile( const string& s ) {
+	return (s != logFile) && (s != fileList) && (s != userList);
+}
 //-----------------------------------Setup----------------------------------
 
 
@@ -51,6 +51,11 @@ inline vector<string> * readAndParse(const string&, const bool);
 
 //Set everything up, called by master process
 void FileHandler::setup() {
+
+	//Prevent multiple uses
+	static bool Finished = false;
+	Assert(!Finished, "FileHandler::setup() should only run once!");
+	Finished = true;
 
 	//TODO
 	string tmp = fileList+string("\n")+logFile+string("\n");
@@ -85,6 +90,11 @@ void FileHandler::setup() {
 //Remove shared memory
 void FileHandler::destroy() {
 
+	//Prevent multiple uses
+	static bool Finished = false;
+	Assert(!Finished, "FileHandler::destroy() should only run once!");
+	Finished = true;
+
 	//Remove all file's user lists
 	shared_memory_object::remove(SHARED_MEM_NAME);
 
@@ -108,6 +118,11 @@ void FileHandler::destroy() {
 //Remove all file access user has, this is blocking
 void FileHandler::userQuit(const string& s) {
 
+	//Prevent multiple uses
+	static bool Finished = false;
+	Assert(!Finished, "FileHandler::userQuit() should only run once per process!");
+	Finished = true;
+
 	//Get the user's list of accessed files
 	auto users = *(segment->find<IntSet>((userPrefix+s).c_str()).first);
 
@@ -129,7 +144,7 @@ void FileHandler::userQuit(const string& s) {
 
 
 //Read and parse file
-inline vector<string> * readAndParse(const string& fileName, const bool getAccess) {
+vector<string> * FileHandler::readAndParse(const string& fileName, const bool getAccess) {
 
 	//Check usage
 	if (fileName == FileHandler::userList)
@@ -167,8 +182,8 @@ inline vector<string> * readAndParse(const string& fileName, const bool getAcces
 //If index != NULL, the index the items is at will be stored in index
 //and userList will be used instead of fileList. If getAccess, and we
 //are reading from the fileList, get read access before reading the file
-inline bool itemExists(const string& s, const bool getAccess = true,
-						int * index = NULL, bool usrLst = false) {
+bool FileHandler::itemExists(const string& s, const bool getAccess, 
+								int * index, bool usrLst) {
 
 	//Determine which file to use
 	string fileName = usrLst ? FileHandler::userList : FileHandler::fileList;
@@ -314,7 +329,7 @@ const data FileHandler::read(const string& s) {
 
 
 //Write data to a file
-inline void writeFn(const string& s, const char * d, const int n, const bool app = true) {
+void FileHandler::writeP(const string& s, const char * d, const int n, const bool app) {
 
 	//Get write access
 	FileHandler::getWriteAccessP(s);
@@ -329,18 +344,36 @@ inline void writeFn(const string& s, const char * d, const int n, const bool app
 	FileHandler::finishWritingP(s);
 }
 
+//Used to log an action
+void FileHandler::log(const char * s) { log(string(s)); }
+void FileHandler::log(const sstr& s) { log(s.str()); }
+void FileHandler::log(const string& s) { 
+
+	//Check use
+	Assert(s.size(), "trying to log an empty string");
+	Assert(s.find('\n') == string::npos || s.find('\n') == (s.size()-1), 
+			"trying to log a string with a new line");
+
+	//Format string
+	sstr ss; ss << me() << s << ((s[s.size()-1] == '\n') ? "":"\n");
+	string str = ss.str();
+
+	//Log the string
+	writeP( logFile, str.data(), (int)str.size() );
+}
+
 //Public wrappers to writeFn
 void FileHandler::append(const string& s, const data& d) {
-	writeFn( s, (char*) &d[0], (int)d.size() );
+	writeP( s, (char*) &d[0], (int)d.size() );
 }
 void FileHandler::append(const string& s, const string d) {
-	writeFn( s, (char*) &d[0], (int)d.size() );
+	writeP( s, (char*) &d[0], (int)d.size() );
 }
 void FileHandler::overWrite(const string& s, const data& d) {
-	writeFn( s, (char*) &d[0], (int)d.size(), false );
+	writeP( s, (char*) &d[0], (int)d.size(), false );
 }
 void FileHandler::overWrite(const string& s, const string d) {
-	writeFn( s, (char*) &d[0], (int)d.size(), false );
+	writeP( s, (char*) &d[0], (int)d.size(), false );
 }
 
 //Add a user

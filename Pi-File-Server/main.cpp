@@ -5,8 +5,6 @@
 #include <signal.h>
 #include <map>
 
-//For readability
-using namespace Synchronized;
 
 //Common functions
 int min(const int a, const int b) { 
@@ -109,11 +107,9 @@ int main(int argc, const char * argv[]) {
 	for(int i = 0; argv[1][i]; i++)
 		Assert(isdigit(argv[1][i]), "Usage: ./a.out <port>");
 
-	//Prevent shared memory leaks
-	preventSharedLeaks(0);
-
-	//Settings
+	//Setup
 	me(MASTER_PROC_NAME);
+	preventSharedLeaks(0);
 	signal(SIGCHLD, SIG_IGN);
 
 	//Local variables
@@ -131,9 +127,9 @@ int main(int argc, const char * argv[]) {
     Assert(bind(sd,(struct sockaddr*)&svr,sizeof(svr))>= 0, "bind() failed");
     listen( sd, 5 );
 
-    //Note that the master server is now up
+	//Setup the FileHandler and note that server has started up 
 	sstr s; s << "Master server started; listening on port: " << port; 
-	FileHandler::setup(); log(s);
+	FileHandler::setup(); FileHandler::log(s);
 
 	//Parent process: loop, Child: break
 	for(int i = 1; i; i = safeFork()) {
@@ -143,8 +139,9 @@ int main(int argc, const char * argv[]) {
 		Assert(sock != -1, "sock() failed.");
 
 		//Log the new connection
-		s.str(""); s << "Received incoming connection from: ";
-		s << inet_ntoa( (struct in_addr)client.sin_addr ); log(s);
+		s.str("Received incoming connection from: ");
+		s << inet_ntoa( (struct in_addr)client.sin_addr ); 
+		FileHandler::log(s);
     }
 
 	//Register this child as a new user

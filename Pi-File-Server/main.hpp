@@ -1,8 +1,6 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
-#include "Synchronized.hpp"
-
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/containers/set.hpp>

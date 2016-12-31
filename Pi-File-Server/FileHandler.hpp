@@ -51,6 +51,7 @@ public:
 
 	//-----------------------Clean up-----------------------
 
+	//TODO: make this all private
 	//This deletes all shared memory
 	static void destroy();
 
@@ -69,6 +70,11 @@ public:
 
 	//--------------Blocking wrapper functions--------------
 
+	//Used to log an action
+	static void log(const char * s);
+	static void log(const std::string& s);
+	static void log(const std::stringstream& s);
+
 	//Read data from a file
 	static const data read(const std::string& s);
 
@@ -80,6 +86,42 @@ public:
 
 	//Add a user to the user list
 	static void addUser(const std::string& s);
+
+private:
+
+	//--------------Blocking 'worker' functions-------------
+
+	//These functions may not be called on userList
+
+	//Get permission to use a file
+	static void getWriteAccessP(const std::string& s);
+	static void getReadAccessP(const std::string& s);
+
+	//Relinquish access
+	static void finishReadingP(const std::string& s, std::string who = "");
+
+	//TODO static void finishReadingP(const std::string& s, std::string& who);
+	static void finishWritingP(const std::string& s);
+
+	//Write data to a file
+	static void writeP(const std::string& s, const char * d,
+						const int n, const bool app = true);
+
+	//-------------------Helper functions-------------------
+
+	static bool legalFile(const std::string& s);
+
+	//---------------Blocking helper functions--------------
+
+	//Read and parse file
+	static std::vector<std::string> * readAndParse(const std::string&, const bool);
+		
+	//Check if an item exists in file f (either userList or fileList)
+	//If index != NULL, the index the items is at will be stored in index
+	//and userList will be used instead of fileList. If getAccess, and we
+	//are reading from the fileList, get read access before reading the file
+	static bool itemExists(const std::string& s, const bool getAccess = true,
+							int * index = NULL, bool usrLst = false);
 
 	//-------------------Const variables-------------------
 
@@ -93,21 +135,6 @@ public:
 	static const std::string logFile;
 	static const std::string fileList;
 	static const std::string userList;
-
-private:
-
-	//------------------Blocking functions------------------
-
-	//These functions may not be called on userList
-
-	//Get permission to use a file
-	static void getWriteAccessP(const std::string& s);
-	static void getReadAccessP(const std::string& s);
-
-	//Relinquish access
-	static void finishReading(const std::string& s, std::string who = "");
-	static void finishWriting(const std::string& s);
-
 
 	//-----------------Non-const variables-----------------
 
