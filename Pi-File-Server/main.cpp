@@ -16,8 +16,8 @@ int min(const int a, const int b) {
 
 //A function used if an assert fails
 void Err(const char *s) {
-    std::cout << "Error " << s << std::endl;
-    perror("Perror"); exit(ERR_EXIT_CODE);
+	std::cout << "Error " << s << std::endl;
+	perror("Perror"); exit(ERR_EXIT_CODE);
 }
 
 //A function used to test assertions
@@ -127,18 +127,18 @@ int main(int argc, const char * argv[]) {
 
 	//Local variables
 	struct sockaddr_in svr, client;
-    int sd, sock, cLen = sizeof(client);
-    unsigned short port = atoi(argv[1]);
+	int sd, sock, cLen = sizeof(client);
+	unsigned short port = atoi(argv[1]);
 
-    //Define the server
-    svr.sin_family = PF_INET;
-    svr.sin_port = htons( port );
-    svr.sin_addr.s_addr = INADDR_ANY;
+	//Define the server
+	svr.sin_family = PF_INET;
+	svr.sin_port = htons( port );
+	svr.sin_addr.s_addr = INADDR_ANY;
 
-    //Create the listener socket as TCP, bind it, limit to 5 connections
-    Assert((sd = socket( PF_INET, SOCK_STREAM, 0 )) >= 0, "socket() failed");
-    Assert(bind(sd,(struct sockaddr*)&svr,sizeof(svr))>= 0, "bind() failed");
-    listen( sd, 5 );
+	//Create the listener socket as TCP, bind it, limit to 5 connections
+	Assert((sd = socket( PF_INET, SOCK_STREAM, 0 )) >= 0, "socket() failed");
+	Assert(bind(sd,(struct sockaddr*)&svr,sizeof(svr))>= 0, "bind() failed");
+	listen( sd, 5 );
 
 	//Setup the FileHandler and note that server has started up 
 	sstr s; s << "Master server started; listening on port: " << port; 
@@ -148,14 +148,14 @@ int main(int argc, const char * argv[]) {
 	for(int i = 1; i; i = safeFork()) {
 
 		//Wait for new connections
-        sock = accept( sd, (struct sockaddr *)&client, (socklen_t*)&cLen );
+		sock = accept( sd, (struct sockaddr *)&client, (socklen_t*)&cLen );
 		Assert(sock != -1, "sock() failed.");
 
 		//Log the new connection
 		s.str("Received incoming connection from: ");
 		s << inet_ntoa( (struct in_addr)client.sin_addr ); 
 		FileHandler::log(s);
-    }
+	}
 
 	//Register this child as a new user
 	FileHandler::addUser(me());

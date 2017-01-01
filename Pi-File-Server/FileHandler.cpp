@@ -60,9 +60,10 @@ void FileHandler::setup() {
 
 	//TODO
 	string tmp = fileList+string("\n")+logFile+string("\n");
-    ofstream o1( logFile, ios::binary | ios::app ); o1.close();
-    ofstream o2( fileList, ios::binary ); o2.write( tmp.c_str(), tmp.size() ); o2.close();
-    ofstream o3( userList, ios::binary ); o3.close();
+	ofstream o1( logFile, ios::binary | ios::app ); 
+	ofstream o2( fileList, ios::binary ); o2.write( tmp.c_str(), tmp.size() ); 
+	ofstream o3( userList, ios::binary ); 
+	o1.close(); o2.close(); o3.close();
 
 	//Prevent memory name collision
 	destroy(); 
@@ -201,7 +202,7 @@ const data FileHandler::read(const string& s) {
 	//Read data in
 	ifstream inFile( s, ios::binary );
 	data ret( (istreambuf_iterator<char>(inFile)), 
-              (istreambuf_iterator<char>()) );
+				(istreambuf_iterator<char>()) );
 	inFile.close();
 
 	//Relinquish access
@@ -231,9 +232,9 @@ void FileHandler::addUser(const string& s) {
 	//Aquire ownership of userList
 	named_mutex m(open_only, (wMutexPrefix+userList).c_str()); m.lock();
 
-    //Append new user to the list 
-    ofstream outFile( userList, ios::binary | ios::app );
-    outFile.write( (s+"\n").c_str(), 1+s.size() );
+	//Append new user to the list 
+	ofstream outFile( userList, ios::binary | ios::app );
+	outFile.write( (s+"\n").c_str(), 1+s.size() );
 	outFile.close();
 
 	//Create user's file list
@@ -355,11 +356,11 @@ void FileHandler::writeP(const string& s, const char * d, const int n,
 
 	//Get write access
 	FileHandler::getWriteAccessP(s);
-    
-    //Append data to the file
+	
+	//Append data to the file
 	auto mode = app ? (ios::binary | ios::app) : ios::binary;
-    ofstream outFile( s, mode );
-    outFile.write( d , n );
+	ofstream outFile( s, mode );
+	outFile.write( d , n );
 	outFile.close();
 
 	//Relinquish access
@@ -393,7 +394,8 @@ vector<string> * FileHandler::readAndParse(const string& fileName, const bool ge
 
 	//Read the file
 	ifstream f( fileName, ios::binary );
-	string str((istreambuf_iterator<char>(f)), istreambuf_iterator<char>()); f.close();
+	string str((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
+	f.close();
 
 	//Finish reading
 	if (fileName == FileHandler::userList) m->unlock();

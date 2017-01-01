@@ -22,7 +22,7 @@ private:
 
 	//The fd this server will listen to
 	const int sock;
-    
+
 	//Static constants for this class
 	static const int BUFFER_SIZE;
 };

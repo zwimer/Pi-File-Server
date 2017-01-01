@@ -91,7 +91,7 @@ private:
 
 	//Remove this user's file permissions
 	static void userQuit(const std::string& s);
-    
+
 	//--------------Blocking 'worker' functions-------------
 
 	//These functions may not be called on userList

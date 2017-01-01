@@ -6,14 +6,14 @@ const int Server::BUFFER_SIZE = 16384;
 
 //Constructor
 Server::Server(int s) : sock(s) {
-    sstr s2; s2 << "Child server has started.";
-    FileHandler::log(s2);
-    start();
+	sstr s2; s2 << "Child server has started.";
+	FileHandler::log(s2);
+	start();
 }
 
 //Destructor
 Server::~Server() {
-    sstr s2; s2 << "Client disconnected from server.";
+	sstr s2; s2 << "Client disconnected from server.";
 	FileHandler::userQuit(me());
 	FileHandler::log(s2);
 }
@@ -23,12 +23,12 @@ void Server::start() {
 
 	//Create a buffer
 	char buffer[BUFFER_SIZE+1]; buffer[BUFFER_SIZE] = 0;
-    
+	
 	//Loop and recieve data from the client
 	for(int n; (n = (int)recv( sock, buffer, BUFFER_SIZE, 0 ) ); ) {
 
 		//Check for errors or disconnects
-        if (n < 0) Err("recv() failed");
+		if (n < 0) Err("recv() failed");
 		else if (!n) return;
 
 		//Log the command, or at least part of it

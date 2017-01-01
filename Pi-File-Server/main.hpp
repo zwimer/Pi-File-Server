@@ -31,7 +31,7 @@
 
 //Define pow2
 #define pow2(P) (__pow2<P>::v)
-template <int N> struct __pow2  { enum { v = 2 * pow2(N-1) }; };
+template <int N> struct __pow2 { enum { v = 2 * pow2(N-1) }; };
 template <> struct __pow2<0> { enum { v = 1 }; };
 
 //The exit code thrown by Err
