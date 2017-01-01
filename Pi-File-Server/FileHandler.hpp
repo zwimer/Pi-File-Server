@@ -10,7 +10,7 @@
 This is a class that allows multiple processes to write to the same
 'physical' files on the hard-drive. This is the lowest level type of
 file. This system prevents data-races, but deadlock is still possible
-is mutliple processes are waiting for access on files each other has
+is multiple processes are waiting for access on files each other has
 access to. Preventing this is the responsibility of whatever uses this
 file-sync system. 
 
@@ -23,7 +23,7 @@ There are three files which are required by FileHandler, listed below.
 - For now: Nothing may EVER be removed from this
 
 ###UserList
-- This is NOT a 'safe' file. To access this file, even for reading, one must aquire the write mutex of this file.
+- This is NOT a 'safe' file. To access this file, even for reading, one must acquire the write mutex of this file.
 - This list keeps track of processes allowed to access this file
 - For now: Nothing may EVER be removed from this
 
@@ -110,6 +110,7 @@ private:
 
 	//-------------------Helper functions-------------------
 
+	//Returns false if the file s shouldn't be accessible
 	static bool legalFile(const std::string& s);
 
 	//---------------Blocking helper functions--------------
@@ -137,7 +138,7 @@ private:
 	static const std::string wMutexPrefix;
 	static const std::string editMutexPrefix;
 
-	//-----------------Non-const variables-----------------
+	//-----------------Non-Const variables-----------------
 
 	//Needed for shared memory
 	static ShmemAllocator * allocIntSet;

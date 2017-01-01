@@ -78,7 +78,6 @@ void FileHandler::setup() {
 	TMP_MAC(logFile);
 	named_mutex w(create_only, (wMutexPrefix+userList).c_str());
 
-cerr << me() << '\n';
 	addUser(me());
 
 	//TODO

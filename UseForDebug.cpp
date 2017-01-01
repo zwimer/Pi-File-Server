@@ -19,12 +19,6 @@
 
 //Protect global namespace
 namespace qqq {
-
-//For print stack frame fn
-#include "/Users/zwimer/School/Other/FunCode/C/myLib.h"
-#include "/Users/zwimer/School/Other/FunCode/C/myLib.c"
-
-	//For FN macro
 	class sce {public: sce(){} ~sce();};
 	int i = 0;
 }
