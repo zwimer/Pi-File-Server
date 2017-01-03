@@ -12,13 +12,13 @@ find_package(Threads REQUIRED)
 set(OUTFILE "AutoGen")
 
 #ls the commands directory
-execute_process(COMMAND ls ../Pi-File-Server/ OUTPUT_FILE COMMAND_FOLDER_LS)
+execute_process(COMMAND ls ../Commands/ OUTPUT_FILE COMMAND_FOLDER_LS)
 
 # ----------For the hpp----------
 
 	#Find the hpp files
 	execute_process(COMMAND grep \\.hpp$ INPUT_FILE COMMAND_FOLDER_LS 
-											OUTPUT_VARIABLE INCLUDE_HPP)
+                                             OUTPUT_VARIABLE INCLUDE_HPP)
 
 	#Make the hpp names into a bunch of include statements
 	string(REPLACE ".hpp\n" ".hpp\"\n#include \"" INCLUDE_HPP "${INCLUDE_HPP}")
@@ -27,7 +27,7 @@ execute_process(COMMAND ls ../Pi-File-Server/ OUTPUT_FILE COMMAND_FOLDER_LS)
 
 
 	#Make the hpp file
-	file(WRITE "build/${OUTFILE}.hpp" "${INCLUDE_HPP}\n\n")
+	file(WRITE "build/${OUTFILE}.hpp" "${INCLUDE_HPP}\n")
 	file(APPEND "build/${OUTFILE}.hpp" "//To protect the global namespace\n")
 	file(APPEND "build/${OUTFILE}.hpp" "namespace ${OUTFILE} {\n\n\t")
 	file(APPEND "build/${OUTFILE}.hpp" "//Match file index to Command generate function.\n\t")
@@ -40,7 +40,7 @@ execute_process(COMMAND ls ../Pi-File-Server/ OUTPUT_FILE COMMAND_FOLDER_LS)
 
 	#Find the cpp files
 	execute_process(COMMAND grep \\.cpp$ INPUT_FILE COMMAND_FOLDER_LS 
-											OUTPUT_VARIABLE COMMAND_NAMES)
+                                             OUTPUT_VARIABLE COMMAND_NAMES)
 
 	#Remove newlines and duplicate the string
 	string(REPLACE "\n" "" COMMAND_NAMES "${COMMAND_NAMES}")
