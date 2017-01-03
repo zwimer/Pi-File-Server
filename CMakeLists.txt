@@ -1,14 +1,8 @@
-# -------------------------------Setup-------------------------------
-
-
 cmake_minimum_required(VERSION 3.0)
 project(Pi-File-Server)
 
 #Require pthreads
 find_package(Threads REQUIRED)
-
-#Compile with C++11, -Wall, and -g
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -g")
 
 
 # --------------------Create Auto-generated files--------------------
@@ -17,59 +11,69 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -g")
 #Auto generated file
 set(OUTFILE "AutoGen")
 
-#Path to Commands
-set(CMD_PATH "../Pi-File-Server/")
+#ls the commands directory
+execute_process(COMMAND ls ../Pi-File-Server/ OUTPUT_FILE COMMAND_FOLDER_LS)
 
-#Find the cpp and hpp files in Commands
-execute_process(COMMAND ls "${CMD_PATH}" OUTPUT_FILE COMMAND_FOLDER_LS)
-execute_process(COMMAND grep \\.hpp$ INPUT_FILE COMMAND_FOLDER_LS 
-										OUTPUT_VARIABLE COMMAND_NAMES_HPP)
-execute_process(COMMAND grep \\.cpp$ INPUT_FILE COMMAND_FOLDER_LS 
-										OUTPUT_VARIABLE COMMAND_NAMES_CPP)
+# ----------For the hpp----------
 
-#Make the hpp names into a bunch of include statements
-string(REPLACE "\n" "" INCLUDE_HPP "${COMMAND_NAMES_HPP}")
-string(REGEX REPLACE ".hpp$" ".hpp\"\n};" INCLUDE_HPP "${INCLUDE_HPP}")
-MESSAGE( "----------" )
-MESSAGE("${INCLUDE_HPP}")
-string(REPLACE ".hpp" ".hpp\"\n#include \"" INCLUDE_HPP "${INCLUDE_HPP}")
-MESSAGE( "----------" )
-MESSAGE("${INCLUDE_HPP}")
+	#Find the hpp files
+	execute_process(COMMAND grep \\.hpp$ INPUT_FILE COMMAND_FOLDER_LS 
+											OUTPUT_VARIABLE INCLUDE_HPP)
+
+	#Make the hpp names into a bunch of include statements
+	string(REPLACE ".hpp\n" ".hpp\"\n#include \"" INCLUDE_HPP "${INCLUDE_HPP}")
+	string(REGEX REPLACE "\n#include \"$" "\n" INCLUDE_HPP "${INCLUDE_HPP}")
+	set(INCLUDE_HPP "#include \"${INCLUDE_HPP}")
 
 
-#Make the hpp file
-file(WRITE "${OUTFILE}.hpp" "namespace ${OUTFILE} {\n\n")
-MESSAGE( "----------" )
-MESSAGE("${INCLUDE_HPP}")
-file(APPEND "${OUTFILE}.hpp" "\n\n}")
+	#Make the hpp file
+	file(WRITE "build/${OUTFILE}.hpp" "${INCLUDE_HPP}\n\n")
+	file(APPEND "build/${OUTFILE}.hpp" "//To protect the global namespace\n")
+	file(APPEND "build/${OUTFILE}.hpp" "namespace ${OUTFILE} {\n\n\t")
+	file(APPEND "build/${OUTFILE}.hpp" "//Match file index to Command generate function.\n\t")
+	file(APPEND "build/${OUTFILE}.hpp" "Command (*cmdsArr[]) (std::string s);\n\n\t")
+	file(APPEND "build/${OUTFILE}.hpp" "//Match file index to Command name.\n\t")
+	file(APPEND "build/${OUTFILE}.hpp" "char*[] cmdNames;\n\t")
+	file(APPEND "build/${OUTFILE}.hpp" "\n}")
+
+# ----------For the cpp----------
+
+	#Find the cpp files
+	execute_process(COMMAND grep \\.cpp$ INPUT_FILE COMMAND_FOLDER_LS 
+											OUTPUT_VARIABLE COMMAND_NAMES)
+
+	#Remove newlines and duplicate the string
+	string(REPLACE "\n" "" COMMAND_NAMES "${COMMAND_NAMES}")
+	set(GEN_FNS "${COMMAND_NAMES}")
+
+	#Format the commands into an array of 
+	#function pointers to their 'generate' functions
+	string(REGEX REPLACE ".cpp$" "::generate\n};" GEN_FNS "${GEN_FNS}")
+	string(REPLACE ".cpp" "::generate,\n\t" GEN_FNS "${GEN_FNS}")
+
+	#Format the command names into an array
+	set(COMMAND_NAMES "\"${COMMAND_NAMES}")
+	string(REGEX REPLACE ".cpp$" "\"\n};" COMMAND_NAMES "${COMMAND_NAMES}")
+	string(REPLACE ".cpp" "\",\n\t\"" COMMAND_NAMES  "${COMMAND_NAMES}")
+
+	#Make the cpp file
+	file(WRITE "build/${OUTFILE}.cpp" "#include \"${OUTFILE}.hpp\"\n\n")
+	file(APPEND "build/${OUTFILE}.cpp" "//For ease of reading\n")
+	file(APPEND "build/${OUTFILE}.cpp" "using namespace ${OUTFILE};\n\n")
+	file(APPEND "build/${OUTFILE}.cpp" "//Match file index to Command generate function.\n")
+	file(APPEND "build/${OUTFILE}.cpp" "Command (*cmdsArr[]) (std::string s) = {\n\t")
+	file(APPEND "build/${OUTFILE}.cpp" "${GEN_FNS}\n\n")
+	file(APPEND "build/${OUTFILE}.cpp" "//Match file index to Command name.\n")
+	file(APPEND "build/${OUTFILE}.cpp" "char*[] cmdNames = {\n\t")
+	file(APPEND "build/${OUTFILE}.cpp" "${COMMAND_NAMES}\n")
 
 
-#Remove newlines and duplicate the string
-string(REPLACE "\n" "" COMMAND_NAMES "${COMMAND_NAMES_CPP}")
-set(GEN_FNS "${COMMAND_NAMES}")
+# -----------------------Create the executable-----------------------
 
-#Format the commands into an array of 
-#function pointers to their 'generate' functions
-string(REGEX REPLACE ".cpp$" "::generate\n};" GEN_FNS "${GEN_FNS}")
-string(REPLACE ".cpp" "::generate,\n\t" GEN_FNS "${GEN_FNS}")
 
-#Format the command names into an array
-set(COMMAND_NAMES "\"${COMMAND_NAMES}")
-string(REGEX REPLACE ".cpp$" "\"\n};" COMMAND_NAMES "${COMMAND_NAMES}")
-string(REPLACE ".cpp" "\",\n\t\"" COMMAND_NAMES  "${COMMAND_NAMES}")
+#Compile with C++11, -Wall, and -g
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -g")
 
-#Make the cpp file
-file(WRITE "${OUTFILE}.cpp" "#include \"${OUTFILE}.hpp\"\n\n")
-file(APPEND "${OUTFILE}.cpp" "//For ease of reading\n")
-file(APPEND "${OUTFILE}.cpp" "using namespace ${OUTFILE};\n\n")
-file(APPEND "${OUTFILE}.cpp" "//Match file index to Command generate function.\n")
-file(APPEND "${OUTFILE}.cpp" "Command (*cmdsArr[]) (std::string s) = {\n\t")
-file(APPEND "${OUTFILE}.cpp" "${GEN_FNS}\n\n")
-file(APPEND "${OUTFILE}.cpp" "//Match file index to Command name.\n")
-file(APPEND "${OUTFILE}.cpp" "char*[] cmdNames = {\n\t")
-file(APPEND "${OUTFILE}.cpp" "${COMMAND_NAMES}\n")
-
-#[[
 #Find the commands .cpp's
 file(GLOB commandCPPs RELATIVE
 	"${CMAKE_CURRENT_SOURCE_DIR}"
@@ -85,4 +89,4 @@ add_executable(a.out
 
 #Link pthreads
 target_link_libraries( a.out ${CMAKE_THREAD_LIBS_INIT} )
-]]
+
