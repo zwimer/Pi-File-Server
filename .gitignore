@@ -33,5 +33,7 @@ Pi-File-Server.xcodeproj/*
 *.app
 
 # Ignore build
+MakeFile
 */build/*
+build/*
 
