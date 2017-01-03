@@ -37,3 +37,6 @@ MakeFile
 */build/*
 build/*
 
+# Ignore auto-generated files
+AutoGen.*
+
