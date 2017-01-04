@@ -12,11 +12,11 @@
 class CommandHandler {
 public:
 
-	//Interpret and execute the command given
-//	static void runCmd(const std::string& buf);
-
 	//Create the map below
 	static void setup();
+
+	//Interpret and execute the command given
+	static void runCmd(const std::string& buf, const std::string thePath );
 
 	//Map command names to objects
 	static std::map<std::string, const AbstractCommand*> cmds;
