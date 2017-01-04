@@ -11,45 +11,51 @@ find_package(Threads REQUIRED)
 #Auto generated file
 set(OUTFILE "AutoGen")
 
-#ls the commands directory
+#Find the hpp files in the Commands directory
 execute_process(COMMAND ls ../Commands/ OUTPUT_FILE COMMAND_FOLDER_LS)
+execute_process(COMMAND grep \\.hpp$ INPUT_FILE COMMAND_FOLDER_LS 
+                                     OUTPUT_VARIABLE ALL_HPP_NAMES)
+
+#Count the number of files
+file(WRITE "build/COMMAND_FOLDER_LS_HPP" "${ALL_HPP_NAMES}")
+execute_process(COMMAND wc -l INPUT_FILE COMMAND_FOLDER_LS_HPP
+                              OUTPUT_VARIABLE NUM_FILES)
+string(REPLACE "\n" "" NUM_FILES "${NUM_FILES}")
+string(REPLACE " " "" NUM_FILES "${NUM_FILES}")
 
 # ----------For the hpp----------
 
-	#Find the hpp files
-	execute_process(COMMAND grep \\.hpp$ INPUT_FILE COMMAND_FOLDER_LS 
-                                             OUTPUT_VARIABLE INCLUDE_HPP)
-
 	#Make the hpp names into a bunch of include statements
-	string(REPLACE ".hpp\n" ".hpp\"\n#include \"" INCLUDE_HPP "${INCLUDE_HPP}")
+	string(REPLACE ".hpp\n" ".hpp\"\n#include \"" INCLUDE_HPP "${ALL_HPP_NAMES}")
 	string(REGEX REPLACE "\n#include \"$" "\n" INCLUDE_HPP "${INCLUDE_HPP}")
 	set(INCLUDE_HPP "#include \"${INCLUDE_HPP}")
 
-
 	#Make the hpp file
-	file(WRITE "build/${OUTFILE}.hpp" "${INCLUDE_HPP}\n")
+	file(WRITE "build/${OUTFILE}.hpp" "#ifndef AUTOGEN_HPP\n")
+	file(APPEND "build/${OUTFILE}.hpp" "#define AUTOGEN_HPP\n\n")
+	file(APPEND "build/${OUTFILE}.hpp" "//System includes\n")
+	file(APPEND "build/${OUTFILE}.hpp" "#include <string>\n\n")
+	file(APPEND "build/${OUTFILE}.hpp" "//My includes\n")
+	file(APPEND "build/${OUTFILE}.hpp" "${INCLUDE_HPP}\n\n")
 	file(APPEND "build/${OUTFILE}.hpp" "//To protect the global namespace\n")
 	file(APPEND "build/${OUTFILE}.hpp" "namespace ${OUTFILE} {\n\n\t")
 	file(APPEND "build/${OUTFILE}.hpp" "//Match file index to Command generate function.\n\t")
-	file(APPEND "build/${OUTFILE}.hpp" "Command (*cmdsArr[]) (std::string s);\n\n\t")
+	file(APPEND "build/${OUTFILE}.hpp" "AbstractCommand * cmdsArr[${NUM_FILES}];\n\n\t")
 	file(APPEND "build/${OUTFILE}.hpp" "//Match file index to Command name.\n\t")
-	file(APPEND "build/${OUTFILE}.hpp" "char*[] cmdNames;\n\t")
-	file(APPEND "build/${OUTFILE}.hpp" "\n}")
+	file(APPEND "build/${OUTFILE}.hpp" "std::string cmdNames[${NUM_FILES}];\n\t")
+	file(APPEND "build/${OUTFILE}.hpp" "\n}\n\n")
+	file(APPEND "build/${OUTFILE}.hpp" "#endif")
 
 # ----------For the cpp----------
 
-	#Find the cpp files
-	execute_process(COMMAND grep \\.cpp$ INPUT_FILE COMMAND_FOLDER_LS 
-                                             OUTPUT_VARIABLE COMMAND_NAMES)
-
-	#Remove newlines and duplicate the string
+	#Get the cpp files in two copies of a string without newlines.
+	string(REPLACE ".hpp" ".cpp" COMMAND_NAMES "${ALL_HPP_NAMES}")
 	string(REPLACE "\n" "" COMMAND_NAMES "${COMMAND_NAMES}")
 	set(GEN_FNS "${COMMAND_NAMES}")
 
-	#Format the commands into an array of 
-	#function pointers to their 'generate' functions
-	string(REGEX REPLACE ".cpp$" "::generate\n};" GEN_FNS "${GEN_FNS}")
-	string(REPLACE ".cpp" "::generate,\n\t" GEN_FNS "${GEN_FNS}")
+	#Format the commands into an array constructors 
+	string(REGEX REPLACE ".cpp$" "()\n};" GEN_FNS "${GEN_FNS}")
+	string(REPLACE ".cpp" "(),\n\tnew " GEN_FNS "${GEN_FNS}")
 
 	#Format the command names into an array
 	set(COMMAND_NAMES "\"${COMMAND_NAMES}")
@@ -61,10 +67,10 @@ execute_process(COMMAND ls ../Commands/ OUTPUT_FILE COMMAND_FOLDER_LS)
 	file(APPEND "build/${OUTFILE}.cpp" "//For ease of reading\n")
 	file(APPEND "build/${OUTFILE}.cpp" "using namespace ${OUTFILE};\n\n")
 	file(APPEND "build/${OUTFILE}.cpp" "//Match file index to Command generate function.\n")
-	file(APPEND "build/${OUTFILE}.cpp" "Command (*cmdsArr[]) (std::string s) = {\n\t")
+	file(APPEND "build/${OUTFILE}.cpp" "AbstractCommand * cmdsArr[${NUM_FILES}] = {\n\tnew ")
 	file(APPEND "build/${OUTFILE}.cpp" "${GEN_FNS}\n\n")
 	file(APPEND "build/${OUTFILE}.cpp" "//Match file index to Command name.\n")
-	file(APPEND "build/${OUTFILE}.cpp" "char*[] cmdNames = {\n\t")
+	file(APPEND "build/${OUTFILE}.cpp" "std::string cmdNames[${NUM_FILES}] = {\n\t")
 	file(APPEND "build/${OUTFILE}.cpp" "${COMMAND_NAMES}\n")
 
 
@@ -85,7 +91,8 @@ add_executable(a.out
 	Pi-File-Server/main.cpp
 	Pi-File-Server/Server.cpp
 	Pi-File-Server/FileHandler.cpp 
-	${commandCPPs} )
+	${commandCPPs}
+)
 
 #Link pthreads
 target_link_libraries( a.out ${CMAKE_THREAD_LIBS_INIT} )
