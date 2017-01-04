@@ -26,9 +26,10 @@ string(REPLACE " " "" NUM_FILES "${NUM_FILES}")
 # ----------For the hpp----------
 
 	#Make the hpp names into a bunch of include statements
-	string(REPLACE ".hpp\n" ".hpp\"\n#include \"" INCLUDE_HPP "${ALL_HPP_NAMES}")
-	string(REGEX REPLACE "\n#include \"$" "\n" INCLUDE_HPP "${INCLUDE_HPP}")
-	set(INCLUDE_HPP "#include \"${INCLUDE_HPP}")
+	set(INC_STR "#include \"../Commands/")
+	string(REPLACE ".hpp\n" ".hpp\"\n${INC_STR}" INCLUDE_HPP "${ALL_HPP_NAMES}")
+	string(REGEX REPLACE "\n${INC_STR}$" "\n" INCLUDE_HPP "${INCLUDE_HPP}")
+	set(INCLUDE_HPP "${INC_STR}${INCLUDE_HPP}")
 
 	#Make the hpp file
 	file(WRITE "build/${OUTFILE}.hpp" "#ifndef AUTOGEN_HPP\n")
@@ -36,7 +37,9 @@ string(REPLACE " " "" NUM_FILES "${NUM_FILES}")
 	file(APPEND "build/${OUTFILE}.hpp" "//System includes\n")
 	file(APPEND "build/${OUTFILE}.hpp" "#include <string>\n\n")
 	file(APPEND "build/${OUTFILE}.hpp" "//My includes\n")
-	file(APPEND "build/${OUTFILE}.hpp" "${INCLUDE_HPP}\n\n")
+	file(APPEND "build/${OUTFILE}.hpp" "${INCLUDE_HPP}\n")
+	file(APPEND "build/${OUTFILE}.hpp" "//Forward declearations\n")
+	file(APPEND "build/${OUTFILE}.hpp" "class AbstractCommand;\n\n\n")
 	file(APPEND "build/${OUTFILE}.hpp" "//To protect the global namespace\n")
 	file(APPEND "build/${OUTFILE}.hpp" "namespace ${OUTFILE} {\n\n\t")
 	file(APPEND "build/${OUTFILE}.hpp" "//Match file index to Command generate function.\n\t")
@@ -91,6 +94,8 @@ add_executable(a.out
 	Pi-File-Server/main.cpp
 	Pi-File-Server/Server.cpp
 	Pi-File-Server/FileHandler.cpp 
+	Pi-File-Server/CommandHandler.cpp 
+	Pi-File-Server/AbstractCommand.cpp 
 	${commandCPPs}
 )
 
