@@ -8,7 +8,7 @@
 All sub-classes MUST contain a factory 
 function with the following prototype: 
 
-	AbstractCommand * createNew(std::string args);
+	AbstractCommand * createNew(std::string args) const;
 	
 This function must create another instance of the class.
 However, it may NOT execute the command! The command
@@ -36,11 +36,12 @@ public:
 	//Destructor
 	virtual ~AbstractCommand();
 
-	//Create another AbstractCommand of the same type
-	virtual AbstractCommand * createNew(std::string args) = 0;
-
 	//Run the command
 	virtual void execute(const std::string& path) = 0;	
+
+	//Create another AbstractCommand of the same type
+	virtual AbstractCommand * createNew(std::string args) const = 0;
+
 };
 
 #endif

@@ -43,10 +43,12 @@ string(REPLACE " " "" NUM_FILES "${NUM_FILES}")
 	file(APPEND "build/${OUTFILE}.hpp" "//To protect the global namespace\n")
 	file(APPEND "build/${OUTFILE}.hpp" "namespace ${OUTFILE} {\n\n\t")
 	file(APPEND "build/${OUTFILE}.hpp" "//Match file index to Command generate function.\n\t")
-	file(APPEND "build/${OUTFILE}.hpp" "AbstractCommand * cmdsArr[${NUM_FILES}];\n\n\t")
+	file(APPEND "build/${OUTFILE}.hpp" "extern const AbstractCommand * cmdsArr[${NUM_FILES}];\n\n\t")
 	file(APPEND "build/${OUTFILE}.hpp" "//Match file index to Command name.\n\t")
-	file(APPEND "build/${OUTFILE}.hpp" "std::string cmdNames[${NUM_FILES}];\n\t")
-	file(APPEND "build/${OUTFILE}.hpp" "\n}\n\n")
+	file(APPEND "build/${OUTFILE}.hpp" "extern const std::string cmdNames[${NUM_FILES}];\n\n\t")
+	file(APPEND "build/${OUTFILE}.hpp" "//The number of length of each array\n\t")
+	file(APPEND "build/${OUTFILE}.hpp" "extern const int numCmds;\n\n")
+	file(APPEND "build/${OUTFILE}.hpp" "}\n\n")
 	file(APPEND "build/${OUTFILE}.hpp" "#endif")
 
 # ----------For the cpp----------
@@ -67,14 +69,14 @@ string(REPLACE " " "" NUM_FILES "${NUM_FILES}")
 
 	#Make the cpp file
 	file(WRITE "build/${OUTFILE}.cpp" "#include \"${OUTFILE}.hpp\"\n\n")
-	file(APPEND "build/${OUTFILE}.cpp" "//For ease of reading\n")
-	file(APPEND "build/${OUTFILE}.cpp" "using namespace ${OUTFILE};\n\n")
 	file(APPEND "build/${OUTFILE}.cpp" "//Match file index to Command generate function.\n")
-	file(APPEND "build/${OUTFILE}.cpp" "AbstractCommand * cmdsArr[${NUM_FILES}] = {\n\tnew ")
+	file(APPEND "build/${OUTFILE}.cpp" "const AbstractCommand * AutoGen::cmdsArr[${NUM_FILES}] = {\n\tnew ")
 	file(APPEND "build/${OUTFILE}.cpp" "${GEN_FNS}\n\n")
 	file(APPEND "build/${OUTFILE}.cpp" "//Match file index to Command name.\n")
-	file(APPEND "build/${OUTFILE}.cpp" "std::string cmdNames[${NUM_FILES}] = {\n\t")
-	file(APPEND "build/${OUTFILE}.cpp" "${COMMAND_NAMES}\n")
+	file(APPEND "build/${OUTFILE}.cpp" "const std::string AutoGen::cmdNames[${NUM_FILES}] = {\n\t")
+	file(APPEND "build/${OUTFILE}.cpp" "${COMMAND_NAMES}\n\n")
+	file(APPEND "build/${OUTFILE}.cpp" "//The number of length of each array\n")
+	file(APPEND "build/${OUTFILE}.cpp" "const int AutoGen::numCmds = ${NUM_FILES};\n")
 
 
 # -----------------------Create the executable-----------------------
@@ -91,6 +93,7 @@ file(GLOB commandCPPs RELATIVE
 
 #Create a.out
 add_executable(a.out
+	build/${OUTFILE}.cpp
 	Pi-File-Server/main.cpp
 	Pi-File-Server/Server.cpp
 	Pi-File-Server/FileHandler.cpp 

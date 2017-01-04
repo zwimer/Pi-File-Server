@@ -1,3 +1,4 @@
+#include "CommandHandler.hpp"
 #include "FileHandler.hpp"
 #include "Server.hpp"
 
@@ -123,6 +124,7 @@ int main(int argc, const char * argv[]) {
 	//Setup
 	preventSharedLeaks();
 	me(MASTER_PROC_NAME);
+	CommandHandler::setup();
 	signal(SIGCHLD, SIG_IGN);
 
 	//Local variables
