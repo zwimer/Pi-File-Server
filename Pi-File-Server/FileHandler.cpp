@@ -178,8 +178,6 @@ void FileHandler::log(const string& s) {
 
 	//Check use
 	Assert(s.size(), "trying to log an empty string");
-	Assert(s.find('\n') == string::npos || s.find('\n') == (s.size()-1), 
-			"trying to log a string with a new line");
 
 	//Format string
 	sstr ss; ss << me() << s << ((s[s.size()-1] == '\n') ? "":"\n");

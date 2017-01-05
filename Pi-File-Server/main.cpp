@@ -155,7 +155,7 @@ int main(int argc, const char * argv[]) {
 		Assert(sock != -1, "sock() failed.");
 
 		//Log the new connection
-		s.str("Received incoming connection from: ");
+		s.str(""); s << "Received incoming connection from: ";
 		s << inet_ntoa( (struct in_addr)client.sin_addr ); 
 		FileHandler::log(s);
 	}

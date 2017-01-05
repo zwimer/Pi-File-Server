@@ -9,16 +9,21 @@ using namespace std;
 //Map command names to objects
 map<string, const AbstractCommand*> CommandHandler::cmds;
 
-
 //Interpret and execute the command given
-string CommandHandler::runCmd(string& theCmd, string& buf,
-						      string& pth, const bool newThread ) {
+string CommandHandler::runCmd(string theCmd, string buf,
+						      string pth, const bool newThread ) {
+
+	//If the command doesn't exist, return so
+	if (cmds.find(theCmd) == cmds.end()) {
+		sstr s; s << "Error, command " << theCmd << " doesn't exist.\n";
+		return s.str();
+	}
 
 	//If threading is needed
 	if (newThread) {
 
 		//Restart this function as a thread
-		thread t( runCmd, std::move(theCmd), std::move(buf), std::move(pth));
+		thread t( runCmd, std::move(theCmd), std::move(buf), std::move(pth), false );
 		t.detach();
 		
 		//Make return message and return it

@@ -1,12 +1,13 @@
-//This file is currently fake, included only for testing
-
 #include "../Pi-File-Server/AbstractCommand.hpp"
 
-class FAKE : public AbstractCommand {
+class echo : public AbstractCommand {
 public:
 
-	FAKE();
-	~FAKE();
+	//Constructor
+	echo();
+
+	//Destructor
+	~echo();
 
 	//Run the command
 	std::string execute(std::string& args, std::string& path);

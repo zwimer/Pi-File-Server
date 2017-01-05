@@ -22,16 +22,27 @@ Server::~Server() {
 	FileHandler::log(s2);
 }
 
+
+
+
+
+#include <iostream>
+using namespace std;
 //Log and send a string
-inline void respond(int sock, const std::string s) {
+inline void respond(int sock, const std::string& s,
+                              const bool addNewL = true) {
+
+	//Add newline if wanted
+	string s2 = s; if(addNewL) s2 += '\n';
 
 	//Log the message
-	FileHandler::log(s);
+	FileHandler::log(s2);
 
 	//Send the string
-	Assert(send( sock, s.data(), s.size(), 0) != s.size(),
+	Assert(send( sock, s2.data(), s2.size(), 0) == s2.size(),
 		"send() failed.");
 }
+
 
 //The function that runs the server
 void Server::start() {
@@ -60,7 +71,7 @@ void Server::start() {
 
 		//Find the command
 		int k; for(k = i + 1; k < n; k++)
-			if (!buf[i] || isspace(buf[i])) break;
+			if (!buf[k] || isspace(buf[k])) break;
 
 		if (k == n) {
 			respond( sock, "Incomplete command recieved" );
@@ -73,7 +84,8 @@ void Server::start() {
 		std::string cmd(&buf[i], k-i);
 
 		//Log the command, or at least part of it
-		sstr s2("Recieved command: "); s2 << cmd;
+		sstr s2; s2 << "Running command: " << cmd;
+		respond(sock, s2.str());
 		FileHandler::log(s2);
 
 		//TODO: change, thePath, thread
@@ -81,6 +93,7 @@ void Server::start() {
 
 		//TODO: change, thePath, thread
 		//Run the command and send the result
-		respond(sock, CommandHandler::runCmd(cmd, args, pth, false));
+		respond(sock, CommandHandler::runCmd(std::move(cmd), std::move(args), 
+		                                     std::move(pth), false), false);
 	}
 }
