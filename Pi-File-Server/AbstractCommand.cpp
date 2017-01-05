@@ -1,8 +1,8 @@
 #include "AbstractCommand.hpp"
 
 //Constructor
-AbstractCommand::AbstractCommand() {}
+Cmd::Cmd() {}
 
 //Destructor
-AbstractCommand::~AbstractCommand() {}
+Cmd::~Cmd() {}
 

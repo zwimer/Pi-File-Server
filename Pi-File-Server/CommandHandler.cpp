@@ -7,7 +7,7 @@
 using namespace std;
 
 //Map command names to objects
-map<string, const AbstractCommand*> CommandHandler::cmds;
+map<string, const Cmd*> CommandHandler::cmds;
 
 //Interpret and execute the command given
 string CommandHandler::runCmd(string theCmd, string buf,
@@ -33,7 +33,7 @@ string CommandHandler::runCmd(string theCmd, string buf,
 	}
 
 	//Execute the command and return the result
-	unique_ptr<AbstractCommand> cmd(cmds[theCmd]->createNew());
+	unique_ptr<Cmd> cmd(cmds[theCmd]->createNew());
 	return cmd->execute( buf, pth );
 }
 

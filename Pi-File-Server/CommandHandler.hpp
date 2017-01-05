@@ -22,7 +22,7 @@ public:
 private:
 
 	//Map command names to objects
-	static std::map<std::string, const AbstractCommand*> cmds;
+	static std::map<std::string, const Cmd*> cmds;
 
 };
 

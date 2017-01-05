@@ -1,7 +1,7 @@
 #include "echo.hpp"
 
 //Constructor
-echo::echo() : AbstractCommand() {}
+echo::echo() : AbstractCommand<echo>() {}
 
 //Destructor
 echo::~echo() {}
@@ -10,7 +10,4 @@ echo::~echo() {}
 std::string echo::execute(std::string& args, std::string&) {
 	return (args+='\n');
 };
-
-//Create another AbstractCommand of the same type
-AbstractCommand * echo::createNew() const { return new echo(); };
 
