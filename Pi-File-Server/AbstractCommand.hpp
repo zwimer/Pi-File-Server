@@ -1,7 +1,7 @@
 #ifndef ABSTRACT_COMMAND_HPP
 #define ABSTRACT_COMMAND_HPP
 
-#include "main.hpp"
+#include "Cmd.hpp"
 
 /* Important for sub-classes: Sub-class AbstractCommand<T>
 
@@ -16,19 +16,6 @@
  */
 
 //A wrapper class to Abstract Command
-class Cmd {
-public: 
-
-	//Constructor
-	Cmd(); virtual ~Cmd();
-
-	//Wrapper to AbstractCommand's createNew
-	virtual Cmd * createNew() const = 0;
-
-	//Run the command, return the message to send back
-	virtual std::string execute(std::string& args, std::string& path) = 0;	
-
-};
 
 
 //An abstract command

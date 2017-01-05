@@ -93,11 +93,11 @@ file(GLOB commandCPPs RELATIVE
 #Create a.out
 add_executable(a.out
 	build/${OUTFILE}.cpp
+	Pi-File-Server/Cmd.cpp 
 	Pi-File-Server/main.cpp
 	Pi-File-Server/Server.cpp
 	Pi-File-Server/FileHandler.cpp 
 	Pi-File-Server/CommandHandler.cpp 
-	Pi-File-Server/AbstractCommand.cpp 
 	${commandCPPs}
 )
 

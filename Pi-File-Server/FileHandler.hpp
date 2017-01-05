@@ -105,8 +105,8 @@ private:
 	static void finishWritingP(const std::string& s);
 
 	//Write data to a file
-	static void writeP(const std::string& s, const char * d, const int n,
-						const bool safe, const bool app = true);
+	static void writeP( const std::string& s, const char * d, const int n,
+	                    const bool safe, const bool app = true );
 
 	//-------------------Helper functions-------------------
 
@@ -122,8 +122,8 @@ private:
 	//If index != NULL, the index the items is at will be stored in index
 	//and userList will be used instead of fileList. If getAccess, and we
 	//are reading from the fileList, get read access before reading the file
-	static bool itemExists(const std::string& s, const bool getAccess = true,
-							int * index = NULL, bool usrLst = false);
+	static bool itemExists( const std::string& s, const bool getAccess = true,
+	                        int * index = NULL, bool usrLst = false );
 
 	//-------------------Const variables-------------------
 

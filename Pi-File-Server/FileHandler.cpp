@@ -156,9 +156,11 @@ void FileHandler::getReadAccess(const std::string& s) {
 
 //Relinquish access
 void FileHandler::finishReading(const std::string& s, std::string who) {
+
 	//Determine who
 	if (who == "") who = me();
 
+	//Have who finish reading
 	Assert(legalFile(s), "cannot call finishWriting on this file!");
 	finishReadingP(s, who);
 }
@@ -297,8 +299,7 @@ void FileHandler::getWriteAccessP(const string& s) {
 void FileHandler::getReadAccessP(const string& s) {
 
 	//Get the user index
-	int i, usr; Assert((bool)itemExists(me(), true, &usr, true),
-		"user doesn't exist!");
+	int i, usr; Assert((bool)itemExists(me(), true, &usr, true), "user doesn't exist!");
 
 	//Add user index to this file's list of users safely
 	named_mutex wMutex(open_only, (wMutexPrefix+s).c_str()); wMutex.lock();
@@ -414,8 +415,8 @@ vector<string> * FileHandler::readAndParse(const string& fileName, const bool ge
 //If index != NULL, the index the items is at will be stored in index
 //and userList will be used instead of fileList. If getAccess, and we
 //are reading from the fileList, get read access before reading the file
-bool FileHandler::itemExists(const string& s, const bool getAccess, 
-								int * index, bool usrLst) {
+bool FileHandler::itemExists( const string& s, const bool getAccess, 
+                              int * index, bool usrLst ) {
 
 	//Determine which file to use
 	string fileName = usrLst ? FileHandler::userList : FileHandler::fileList;

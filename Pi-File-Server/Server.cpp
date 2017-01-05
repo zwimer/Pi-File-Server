@@ -23,14 +23,8 @@ Server::~Server() {
 }
 
 
-
-
-
-#include <iostream>
-using namespace std;
 //Log and send a string
-inline void respond(int sock, const std::string& s,
-                              const bool addNewL = true) {
+inline void respond(int sock, const std::string& s, const bool addNewL = true) {
 
 	//Add newline if wanted
 	string s2 = s; if(addNewL) s2 += '\n';
@@ -42,7 +36,6 @@ inline void respond(int sock, const std::string& s,
 	Assert(send( sock, s2.data(), s2.size(), 0) == s2.size(),
 		"send() failed.");
 }
-
 
 //The function that runs the server
 void Server::start() {
@@ -93,7 +86,7 @@ void Server::start() {
 
 		//TODO: change, thePath, thread
 		//Run the command and send the result
-		respond(sock, CommandHandler::runCmd(std::move(cmd), std::move(args), 
-		                                     std::move(pth), false), false);
+		respond(sock, CommandHandler::runCmd( std::move(cmd), std::move(args), 
+		                                      std::move(pth), false), false );
 	}
 }

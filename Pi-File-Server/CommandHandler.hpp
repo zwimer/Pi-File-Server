@@ -16,8 +16,8 @@ public:
 	static void setup();
 
 	//Interpret and execute the command given
-	static std::string runCmd(std::string theCmd, std::string buf,
-	                          std::string pth, const bool newThread);
+	static std::string runCmd( std::string theCmd, std::string buf,
+	                           std::string pth, const bool newThread );
 
 private:
 

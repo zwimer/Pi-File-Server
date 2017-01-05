@@ -10,8 +10,8 @@ using namespace std;
 map<string, const Cmd*> CommandHandler::cmds;
 
 //Interpret and execute the command given
-string CommandHandler::runCmd(string theCmd, string buf,
-						      string pth, const bool newThread ) {
+string CommandHandler::runCmd( string theCmd, string buf,
+                               string pth, const bool newThread ) {
 
 	//If the command doesn't exist, return so
 	if (cmds.find(theCmd) == cmds.end()) {

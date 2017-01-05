@@ -1,6 +1,6 @@
 # Pi-File-Server
 
-A little file server to be run on a raspberry pi
+This is a little file server meant for running on an internal network on a raspberry pi, built in an extensible way.
 
 ## Disclaimer
 

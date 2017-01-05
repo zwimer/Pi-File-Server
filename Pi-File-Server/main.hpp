@@ -24,7 +24,7 @@
 
 //A macro that prints the line, file, and function, useful in debugging
 #define DBG std::cerr << basename((char*)__FILE__) << ": " << __LINE__ \
-				<< " - "<< __PRETTY_FUNCTION__ << std::endl;
+                      << " - "<< __PRETTY_FUNCTION__ << std::endl;
 
 #endif
 
