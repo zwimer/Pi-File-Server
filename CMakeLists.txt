@@ -97,7 +97,6 @@ add_executable(a.out
 	Pi-File-Server/main.cpp
 	Pi-File-Server/Server.cpp
 	Pi-File-Server/FileHandler.cpp 
-	Pi-File-Server/CHException.cpp
 	Pi-File-Server/CommandHandler.cpp 
 	Pi-File-Server/AbstractCommand.cpp 
 	${commandCPPs}

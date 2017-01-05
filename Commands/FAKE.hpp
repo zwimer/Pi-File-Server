@@ -9,9 +9,9 @@ public:
 	~FAKE();
 
 	//Run the command
-	void execute(const std::string& path);
+	std::string execute(std::string& args, std::string& path);
 
 	//Create another AbstractCommand of the same type
-	AbstractCommand * createNew(std::string args) const;
+	AbstractCommand * createNew() const;
 
 };

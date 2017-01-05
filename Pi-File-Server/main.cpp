@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <signal.h>
+#include <thread>
 #include <map>
 
 
@@ -48,7 +49,7 @@ std::string me(const std::string s) {
 	static std::map<std::string, std::string> mem;
 
 	//Create map key
-	sstr ss; ss << getpid() << " " << pthread_self();
+	sstr ss; ss << getpid() << " " << std::this_thread::get_id();
 
 	//If the process is not in the map, add it
 	if (mem.find(ss.str()) == mem.end()) {

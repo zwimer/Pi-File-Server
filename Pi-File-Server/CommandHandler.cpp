@@ -1,41 +1,35 @@
 #include "CommandHandler.hpp"
-#include "CHException.hpp"
 
+#include <memory>
+#include <thread>
+
+//For readability
+using namespace std;
 
 //Map command names to objects
-std::map<std::string, const AbstractCommand*> CommandHandler::cmds;
+map<string, const AbstractCommand*> CommandHandler::cmds;
 
 
 //Interpret and execute the command given
-void CommandHandler::runCmd(const std::string& buf, const std::string thePath ) {
+string CommandHandler::runCmd(string& theCmd, string& buf,
+						      string& pth, const bool newThread ) {
 
-	//Ignore prepended whitespace
-	int i; for(i = 0; i < buf.size(); i++)
-		if (!isspace(buf[i])) break;
+	//If threading is needed
+	if (newThread) {
 
-	//Get the first word of buf
-	int k = i; for(; k < buf.size(); k++)
-		if (isspace(buf[k])) break;
+		//Restart this function as a thread
+		thread t( runCmd, std::move(theCmd), std::move(buf), std::move(pth));
+		t.detach();
+		
+		//Make return message and return it
+		sstr s; s << "Command " << theCmd << " started on thread " 
+			<< t.get_id() << ".\n";
+		return s.str();
+	}
 
-	//If there is no command, throw an exception
-	if (k == buf.size()) throw CHException( CHException::NO_COMMAND );
-
-	//Create the command name
-	std::string theCmd(buf, i, k - i);
-
-	//If it is invalud, throw an exception
-	if (cmds.find(theCmd) == cmds.end())
-		throw CHException( CHException::INVALID_COMMAND );
-
-	//Create the command
-	std::string args(buf, k + 1, buf.size() - k);
-	auto * cmd = cmds[theCmd]->createNew(args);
-
-	//Execute the command
-	cmd->execute( thePath );
-
-	//Prevent leaks
-	delete cmd;
+	//Execute the command and return the result
+	unique_ptr<AbstractCommand> cmd(cmds[theCmd]->createNew());
+	return cmd->execute( buf, pth );
 }
 
 //Create a map linking commands to their names

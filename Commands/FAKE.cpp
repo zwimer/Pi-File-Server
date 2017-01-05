@@ -6,8 +6,8 @@ FAKE::FAKE() : AbstractCommand() {}
 FAKE::~FAKE() {}
 
 //Run the command
-void FAKE::execute(const std::string& path) {};
+std::string FAKE::execute(std::string& args, std::string& path) {return ""};
 
 //Create another AbstractCommand of the same type
-AbstractCommand * FAKE::createNew(std::string args) const {return NULL;};
+AbstractCommand * FAKE::createNew() const {return NULL;};
 

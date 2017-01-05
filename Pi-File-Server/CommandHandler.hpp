@@ -16,7 +16,10 @@ public:
 	static void setup();
 
 	//Interpret and execute the command given
-	static void runCmd(const std::string& buf, const std::string thePath );
+	static std::string runCmd(std::string& theCmd, std::string& buf,
+	                          std::string& pth, const bool newThread = false );
+
+private:
 
 	//Map command names to objects
 	static std::map<std::string, const AbstractCommand*> cmds;
