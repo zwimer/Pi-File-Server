@@ -8,7 +8,6 @@
 using namespace std;
 
 //Map command names to objects
-Server * CommandHandler::svr = nullptr;
 map<string, const Cmd*> CommandHandler::cmds;
 
 
@@ -17,10 +16,6 @@ void CommandHandler::setup() { RUN_ONCE
 	for(int i = 0; i < AutoGen::numCmds; i++)
 		cmds[AutoGen::cmdNames[i]] = AutoGen::cmdsArr[i];
 }
-
-//Set's the server this class will use
-//Each process will call this on their own server
-void CommandHandler::setServer(Server * s) { RUN_ONCE svr = s; }
 
 //Interpret and execute the command given
 string CommandHandler::runCmd( std::string theCmd, std::string buf, bool newThread ) {
@@ -45,12 +40,12 @@ string CommandHandler::runCmd( std::string theCmd, std::string buf, bool newThre
 	}
 
 	//Run the command
-	string pth = svr->getPath();
+	string pth = Server::getPath();
 	unique_ptr<Cmd> cmd(cmds[theCmd]->createNew());
 	string ret = cmd->execute( buf, pth );
 
 	//Alter the path and return ret
-	svr->setPath( pth );
+	Server::setPath( pth );
 	return ret;
 }
 

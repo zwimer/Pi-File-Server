@@ -2,5 +2,5 @@
 
 //Print the arguments given
 struct echo : AbstractCommand<echo> {
-	std::string execute(std::string& args, std::string& path);
+	std::string execute(std::string& args, std::string&);
 };

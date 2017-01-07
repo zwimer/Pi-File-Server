@@ -20,20 +20,18 @@ public:
 	//Run the server
 	void start();
 
-	//Get the current path
-	std::string getPath() const;
-
-	//Change the path
-	void setPath(const std::string& s);
+	//For accessing thePath
+	static std::string getPath();
+	static void setPath(const std::string& s);
 
 private:
 
-	//The currnt 'path'
-	std::string thePath;
-	mutable std::mutex m;
-
 	//The socket this server will use
 	const int sock;
+
+	//The currnt 'path'
+	static std::mutex m;
+	static std::string thePath;
 
 	//Static constants for this class
 	static const int BUFFER_SIZE;

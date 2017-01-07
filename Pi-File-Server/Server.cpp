@@ -7,12 +7,14 @@
 //Define constants
 const int Server::BUFFER_SIZE = 16384; 
 
+//Define static
+std::mutex Server::m;
+std::string Server::thePath = "";
 
 //Constructor
 Server::Server(int s) : sock(s) { RUN_ONCE
 	sstr s2; s2 << "Child server has started.";
 	FileHandler::log(s2);
-	thePath = "";
 	start();
 }
 
@@ -24,31 +26,25 @@ Server::~Server() {
 }
 
 //Get the current path
-std::string Server::getPath() const {
-	return thePath;
+std::string Server::getPath() {
+	std::lock_guard<std::mutex> m2(m);
+	auto ret = thePath; return ret;
 }
 
-//Change the path
+//Change the path, if it changed, log it
 void Server::setPath(const std::string& s) {
-	thePath = s;
+	std::lock_guard<std::mutex> m2(m);
+	if (s != thePath) {
+		sstr s2; s2 << "Path changed to \"" << s << "\"";
+		FileHandler::log(s2); thePath = s; 
+	}
 }
 
 
 //Log and send a string
-inline void respond(int sock, std::string s, const bool addNewL = true) {
-
-	//Add newline if wanted
-	if(addNewL) s += '\n';
-
-	//Log the message
+inline void respond(int sock, std::string&& s) {
 	FileHandler::log(s);
-
-	//Send the string
-	Assert(send( sock, s.data(), s.size(), 0) == s.size(),
-		"send() failed.");
-}
-inline void respond(int sock, const char * s, const bool addNewL = true) {
-	respond(sock, std::move(std::string(s)), addNewL);
+	Assert(send( sock, s.data(), s.size(), 0) == s.size(), "send() failed.");
 }
 
 //The function that runs the server
@@ -71,7 +67,7 @@ void Server::start() { RUN_ONCE
 
 		//If an empty string was recieved, note so then continue
 		if (i == n) {
-			respond( sock, "Empty string recieved" );
+			respond( sock, "Empty string recieved\n" );
 			//TODO
 			continue;
 		}
@@ -81,7 +77,7 @@ void Server::start() { RUN_ONCE
 			if (!buf[k] || isspace(buf[k])) break;
 
 		if (k == n) {
-			respond( sock, "Incomplete command recieved" );
+			respond( sock, "Incomplete command recieved\n" );
 			//TODO
 			continue;
 		}
@@ -91,13 +87,25 @@ void Server::start() { RUN_ONCE
 		std::string cmd(&buf[i], k-i);
 
 		//Log the command, or at least part of it
-		sstr s2; s2 << "Running command: " << cmd;
+		sstr s2; s2 << "Running command: " << cmd << '\n';
 		respond(sock, s2.str());
 		FileHandler::log(s2);
 
 		//TODO: change, thread
 		//Run the command and send the result
-		respond( sock, CommandHandler::runCmd( std::move(cmd), std::move(args), false),
-		         false );
+		std::string output = CommandHandler::runCmd( std::move(cmd), 
+													 std::move(args), false );
+
+		//If there is output
+		if (output.size()) {
+
+			//Log it
+			sstr s; s << "Server sent: " << output;
+			FileHandler::log(s);
+
+			//Reply to the client
+			Assert( send(sock, output.data(), output.size(), 0) == output.size(),
+			        "send() failed." );
+		}
 	}
 }

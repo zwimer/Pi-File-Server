@@ -84,7 +84,12 @@ void FileHandler::setup() { RUN_ONCE
 
 
 //Remove shared memory
-void FileHandler::destroy() { RUN_ONCE
+void FileHandler::destroy() {
+
+	//Prevent more than two uses
+	static int Finished = 0;
+	Assert(Finished < 2, "FileHandler::destroy() should only run twice!");
+	Finished++;
 
 	//Remove all file's user lists
 	shared_memory_object::remove(SHARED_MEM_NAME);
