@@ -24,16 +24,16 @@ Server::~Server() {
 
 
 //Log and send a string
-inline void respond(int sock, const std::string& s, const bool addNewL = true) {
+inline void respond(int sock, std::string&& s, const bool addNewL = true) {
 
 	//Add newline if wanted
-	string s2 = s; if(addNewL) s2 += '\n';
+	if(addNewL) s += '\n';
 
 	//Log the message
-	FileHandler::log(s2);
+	FileHandler::log(s);
 
 	//Send the string
-	Assert(send( sock, s2.data(), s2.size(), 0) == s2.size(),
+	Assert(send( sock, s.data(), s.size(), 0) == s.size(),
 		"send() failed.");
 }
 
