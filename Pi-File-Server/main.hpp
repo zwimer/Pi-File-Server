@@ -47,6 +47,15 @@ template <> struct __pow2<0> { enum { v = 1 }; };
 //Name of the master process
 #define MASTER_PROC_NAME "Master"
 
+//A simple macro that prevents the function
+//it is in from running multiple times
+#define RUN_ONCE { \
+	static bool neverRun = true; \
+	std::string s(__PRETTY_FUNCTION__); \
+	s += "() should only run once!"; \
+	Assert(neverRun, s.c_str()); \
+	neverRun = false; \
+} 
 
 //Helpful typedef
 typedef boost::interprocess::allocator<int, boost::interprocess::managed_shared_memory::segment_manager> ShmemAllocator;

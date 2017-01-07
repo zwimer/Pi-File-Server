@@ -1,4 +1,5 @@
 #include "CommandHandler.hpp"
+#include "Server.hpp"
 
 #include <memory>
 #include <thread>
@@ -7,11 +8,22 @@
 using namespace std;
 
 //Map command names to objects
+Server * CommandHandler::svr = nullptr;
 map<string, const Cmd*> CommandHandler::cmds;
 
+
+//Create a map linking commands to their names
+void CommandHandler::setup() { RUN_ONCE
+	for(int i = 0; i < AutoGen::numCmds; i++)
+		cmds[AutoGen::cmdNames[i]] = AutoGen::cmdsArr[i];
+}
+
+//Set's the server this class will use
+//Each process will call this on their own server
+void CommandHandler::setServer(Server * s) { RUN_ONCE svr = s; }
+
 //Interpret and execute the command given
-string CommandHandler::runCmd( string theCmd, string buf,
-                               string pth, const bool newThread ) {
+string CommandHandler::runCmd( std::string theCmd, std::string buf, bool newThread ) {
 
 	//If the command doesn't exist, return so
 	if (cmds.find(theCmd) == cmds.end()) {
@@ -23,7 +35,7 @@ string CommandHandler::runCmd( string theCmd, string buf,
 	if (newThread) {
 
 		//Restart this function as a thread
-		thread t( runCmd, std::move(theCmd), std::move(buf), std::move(pth), false );
+		thread t( runCmd, std::move(theCmd), std::move(buf), false );
 		t.detach();
 		
 		//Make return message and return it
@@ -32,14 +44,13 @@ string CommandHandler::runCmd( string theCmd, string buf,
 		return s.str();
 	}
 
-	//Execute the command and return the result
+	//Run the command
+	string pth = svr->getPath();
 	unique_ptr<Cmd> cmd(cmds[theCmd]->createNew());
-	return cmd->execute( buf, pth );
-}
+	string ret = cmd->execute( buf, pth );
 
-//Create a map linking commands to their names
-void CommandHandler::setup() {
-	for(int i = 0; i < AutoGen::numCmds; i++)
-		cmds[AutoGen::cmdNames[i]] = AutoGen::cmdsArr[i];
+	//Alter the path and return ret
+	svr->setPath( pth );
+	return ret;
 }
 

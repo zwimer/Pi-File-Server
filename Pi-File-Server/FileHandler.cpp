@@ -23,8 +23,8 @@ const string FileHandler::fileList = "FileList";
 const string FileHandler::userList = "UserList";
 
 //Initalize shared memory pointers
-ShmemAllocator * FileHandler::allocIntSet = NULL;
-managed_shared_memory * FileHandler::segment = NULL;
+ShmemAllocator * FileHandler::allocIntSet = nullptr;
+managed_shared_memory * FileHandler::segment = nullptr;
 
 
 /*	A quick note. Shared memory user's file lists are formated as follows
@@ -48,12 +48,7 @@ managed_shared_memory * FileHandler::segment = NULL;
 }
 
 //Set everything up, called by master process
-void FileHandler::setup() {
-
-	//Prevent multiple uses
-	static bool Finished = false;
-	Assert(!Finished, "FileHandler::setup() should only run once!");
-	Finished = true;
+void FileHandler::setup() { RUN_ONCE
 
 	//Prevent memory name using previous memory 
 	destroy(); 
@@ -89,12 +84,7 @@ void FileHandler::setup() {
 
 
 //Remove shared memory
-void FileHandler::destroy() {
-
-	//Prevent multiple uses
-	static int Finished = 0;
-	Assert(Finished < 2, "FileHandler::destroy() should only run twice!");
-	Finished++;
+void FileHandler::destroy() { RUN_ONCE
 
 	//Remove all file's user lists
 	shared_memory_object::remove(SHARED_MEM_NAME);
@@ -117,12 +107,7 @@ void FileHandler::destroy() {
 }
 
 //Remove all file access user has, this is blocking
-void FileHandler::userQuit(const string& s) {
-
-	//Prevent multiple uses
-	static bool Finished = false;
-	Assert(!Finished, "FileHandler::userQuit() should only run once per process!");
-	Finished = true;
+void FileHandler::userQuit(const string& s) { RUN_ONCE
 
 	//Get the user's list of accessed files
 	auto users = *(segment->find<IntSet>((userPrefix+s).c_str()).first);
@@ -383,7 +368,7 @@ vector<string> * FileHandler::readAndParse(const string& fileName, const bool ge
 		Assert(getAccess, "User file is a special file. Ownership should always be aquired");
 
 	//Get permission to read the file
-	named_mutex * m = NULL;
+	named_mutex * m = nullptr;
 	if (fileName == FileHandler::userList) {
 		m = new named_mutex(open_only, (FileHandler::wMutexPrefix+fileName).c_str());
 		m->lock();
@@ -412,7 +397,7 @@ vector<string> * FileHandler::readAndParse(const string& fileName, const bool ge
 }
 
 //Check if an item exists in file f (either userList or fileList)
-//If index != NULL, the index the items is at will be stored in index
+//If index != nullptr, the index the items is at will be stored in index
 //and userList will be used instead of fileList. If getAccess, and we
 //are reading from the fileList, get read access before reading the file
 bool FileHandler::itemExists( const string& s, const bool getAccess, 

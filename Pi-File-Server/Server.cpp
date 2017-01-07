@@ -9,9 +9,10 @@ const int Server::BUFFER_SIZE = 16384;
 
 
 //Constructor
-Server::Server(int s) : sock(s) {
+Server::Server(int s) : sock(s) { RUN_ONCE
 	sstr s2; s2 << "Child server has started.";
 	FileHandler::log(s2);
+	thePath = "";
 	start();
 }
 
@@ -22,9 +23,19 @@ Server::~Server() {
 	FileHandler::log(s2);
 }
 
+//Get the current path
+std::string Server::getPath() const {
+	return thePath;
+}
+
+//Change the path
+void Server::setPath(const std::string& s) {
+	thePath = s;
+}
+
 
 //Log and send a string
-inline void respond(int sock, std::string&& s, const bool addNewL = true) {
+inline void respond(int sock, std::string s, const bool addNewL = true) {
 
 	//Add newline if wanted
 	if(addNewL) s += '\n';
@@ -36,9 +47,12 @@ inline void respond(int sock, std::string&& s, const bool addNewL = true) {
 	Assert(send( sock, s.data(), s.size(), 0) == s.size(),
 		"send() failed.");
 }
+inline void respond(int sock, const char * s, const bool addNewL = true) {
+	respond(sock, std::move(std::string(s)), addNewL);
+}
 
 //The function that runs the server
-void Server::start() {
+void Server::start() { RUN_ONCE
 
 	//Create a buffer
 	char buf[BUFFER_SIZE+1]; buf[BUFFER_SIZE] = 0;
@@ -81,12 +95,9 @@ void Server::start() {
 		respond(sock, s2.str());
 		FileHandler::log(s2);
 
-		//TODO: change, thePath, thread
-		std::string pth = "";
-
-		//TODO: change, thePath, thread
+		//TODO: change, thread
 		//Run the command and send the result
-		respond(sock, CommandHandler::runCmd( std::move(cmd), std::move(args), 
-		                                      std::move(pth), false), false );
+		respond( sock, CommandHandler::runCmd( std::move(cmd), std::move(args), false),
+		         false );
 	}
 }
