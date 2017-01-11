@@ -38,7 +38,11 @@ public:
 
 
 //Constructor
-template<class T> AbstractCommand<T>::AbstractCommand() : Cmd() {}
+template<class T> AbstractCommand<T>::AbstractCommand() : Cmd() {
+
+	//Ensure T is a subclass of AbstractCommmand
+	STATIC_ASSERT(SubClass(T, AbstractCommand), T_is_not_a_subclass_of_AC)
+}
 
 //Destructor
 template<class T> AbstractCommand<T>::~AbstractCommand() {}

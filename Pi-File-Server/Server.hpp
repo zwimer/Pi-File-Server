@@ -3,7 +3,6 @@
 
 #include "main.hpp"
 
-#include <mutex>
 
 //A server that will handle
 //all requests made on fd sock

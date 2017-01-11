@@ -3,7 +3,6 @@
 
 #include "Server.hpp"
 
-#include <mutex>
 #include <map>
 
 /*
@@ -16,18 +15,18 @@ file-sync system.
 
 There are three files which are required by FileHandler, listed below.
 
-##Required Files:
+## Required Files:
 
-###FileList
+### FileList
 - Files added to this will be 'safe'
 - For now: Nothing may EVER be removed from this
 
-###UserList
+### UserList
 - This is NOT a 'safe' file. To access this file, even for reading, one must acquire the write mutex of this file.
 - This list keeps track of processes allowed to access this file
 - For now: Nothing may EVER be removed from this
 
-###Log file
+### Log file
 - A record of what has happened in the program so far
 
  */

@@ -32,13 +32,6 @@ int safeFork() {
 	return ret;
 }
 
-//Malloc, but check to see if failed
-void * safeMalloc(int s) {
-	void * ret = malloc((size_t)s);
-	Assert(ret, "malloc() failed");
-	return ret;
-}
-
 //Create a string unique to this thread of this process
 //If an argument is provided, make that the unqique
 //identifier of this thread of this process
@@ -112,7 +105,8 @@ void preventSharedLeaks( int sig = 0 ) {
 	if (sig != 0 && sig != SIGINT) exit(sig);
 	exit(retCode);
 }
-
+#include "AbstractCommand.hpp"
+#include "../Commands/echo.hpp"
 
 //Main function
 int main(int argc, const char * argv[]) {
