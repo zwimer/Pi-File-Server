@@ -50,6 +50,10 @@ inline void respond(int sock, std::string&& s) {
 //The function that runs the server
 void Server::start() { RUN_ONCE
 
+	//Local variables
+	bool newThread;
+	int i, k;
+
 	//Create a buffer
 	char buf[BUFFER_SIZE+1]; buf[BUFFER_SIZE] = 0;
 	
@@ -61,9 +65,12 @@ void Server::start() { RUN_ONCE
 		else if (!n) return;
 		else buf[n] = 0;
 
+		//Check if threading should be done
+		i = 0; if (buf[0] == '&') i++;
+		newThread = i;
+
 		//Ignore prepended whitespace
-		int i; for(i = 0; i < n; i++)
-			if (buf[i] && !isspace(buf[i])) break;
+		for(; i < n; i++) if (buf[i] && !isspace(buf[i])) break;
 
 		//If an empty string was recieved, note so then continue
 		if (i == n) {
@@ -73,8 +80,7 @@ void Server::start() { RUN_ONCE
 		}
 
 		//Find the command
-		int k; for(k = i + 1; k < n; k++)
-			if (!buf[k] || isspace(buf[k])) break;
+		for(k = i + 1; k < n; k++) if (!buf[k] || isspace(buf[k])) break;
 
 		if (k == n) {
 			respond( sock, "Incomplete command recieved\n" );
@@ -94,7 +100,7 @@ void Server::start() { RUN_ONCE
 		//TODO: change, thread
 		//Run the command and send the result
 		std::string output = CommandHandler::runCmd( std::move(cmd), 
-													 std::move(args), false );
+													 std::move(args), newThread );
 
 		//If there is output
 		if (output.size()) {
