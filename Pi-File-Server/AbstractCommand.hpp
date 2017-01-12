@@ -2,6 +2,7 @@
 #define ABSTRACT_COMMAND_HPP
 
 #include "Cmd.hpp"
+#include "main.hpp"
 
 /* Important for sub-classes: Sub-class AbstractCommand<T>
 
@@ -41,7 +42,8 @@ public:
 template<class T> AbstractCommand<T>::AbstractCommand() : Cmd() {
 
 	//Ensure T is a subclass of AbstractCommmand
-	STATIC_ASSERT(SubClass(T, AbstractCommand), T_is_not_a_subclass_of_AC)
+	static_assert( SubClass(T, AbstractCommand),
+	               "T is not a subclass of AbstractCommand" );
 }
 
 //Destructor

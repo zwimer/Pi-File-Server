@@ -155,7 +155,7 @@ int main(int argc, const char * argv[]) {
 	}
 
 	//Register this child as a new user
-	FileHandler::addUser(me());
+	FileHandler::addMe();
 
 	//Child: Start the server, exit when server quits
 	Server a(sock); return EXIT_SUCCESS;

@@ -28,10 +28,6 @@
 template <int N> struct __pow2 { enum { v = 2 * __pow2<N-1>::v }; };
 template <> struct __pow2<0> { enum { v = 1 }; };
 
-//For STATIC_ASSERT: Constructor takes any argument 
-//if <bool> is true, otherwise, only default constructor exists
-template<bool> struct StaticCheck { StaticCheck(...); };
-template<> struct StaticCheck<false> {};
 
 //Check if Sub is a subclass of Sup
 template <class Sub, class Sup> class __SubClass {
@@ -68,13 +64,6 @@ template <class T> class __SubClass<T, T> { public: enum { valid = 0 }; };
 //Template-meta wrappers
 #define pow2(P) (__pow2<P>::v)
 #define SubClass(A,B) __SubClass<A,B>::valid
-
-//Static assert with error message
-#define STATIC_ASSERT(b, msg) { \
-	class ASSERT_FAILED_##msg {}; \
-	auto tmp = ASSERT_FAILED_##msg(); \
-	sizeof( StaticCheck<(b)>( tmp ) ); \
-}
 
 //Debug mode, default on
 #ifndef NO_DEBUG

@@ -73,7 +73,8 @@ void FileHandler::setup() { RUN_ONCE
 	TMP_MAC(logFile);
 	named_mutex w(create_only, (wMutexPrefix+userList).c_str());
 
-	addUser(me());
+	//Add the master process as a user
+	addMe();
 
 	//TODO
 
@@ -216,10 +217,26 @@ void FileHandler::overWrite(const string& s, const string d) {
 }
 
 //Add a user
-void FileHandler::addUser(const string& s) {
+void FileHandler::addMe() {
 
 	//Aquire ownership of userList
 	named_mutex m(open_only, (wMutexPrefix+userList).c_str()); m.lock();
+
+	//Read the file
+	ifstream f( userList, ios::binary );
+	string str((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
+	f.close();
+
+	//Get me with a trailing \n
+	string s(std::move(me())); s += '\n';
+
+	//If user already exists, do nothing
+	 if (str.find(s) != string::npos) {
+		m.unlock(); return;
+	}
+	
+	//Remove the newline
+	s.pop_back();
 
 	//Append new user to the list 
 	ofstream outFile( userList, ios::binary | ios::app );

@@ -78,8 +78,8 @@ public:
 	static void append(const std::string& s, const std::string d);
 	static void overWrite(const std::string& s, const std::string d);
 
-	//Add a user to the user list
-	static void addUser(const std::string& s);
+	//Add a me to the user list
+	static void addMe();
 
 private:
 

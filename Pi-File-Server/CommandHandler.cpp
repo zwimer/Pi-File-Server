@@ -1,4 +1,5 @@
 #include "CommandHandler.hpp"
+#include "FileHandler.hpp"
 #include "Server.hpp"
 
 #include <memory>
@@ -18,7 +19,8 @@ void CommandHandler::setup() { RUN_ONCE
 }
 
 //Interpret and execute the command given
-string CommandHandler::runCmd( std::string theCmd, std::string buf, bool newThread ) {
+string CommandHandler::runCmd( std::string theCmd, std::string buf, 
+                               bool newThread, bool isNew ) {
 
 	//If the command doesn't exist, return so
 	if (cmds.find(theCmd) == cmds.end()) {
@@ -26,11 +28,21 @@ string CommandHandler::runCmd( std::string theCmd, std::string buf, bool newThre
 		return s.str();
 	}
 
+	//If this is a new thread
+	if (isNew) { 
+
+		//Error checking
+		Assert(!newThread, "Should not thread at the beginning of a thread!");
+
+		//Add this thread to the user list
+		FileHandler::addMe();
+	}
+
 	//If threading is needed
-	if (newThread) {
+	else if (newThread) {
 
 		//Restart this function as a thread
-		thread t( runCmd, std::move(theCmd), std::move(buf), false );
+		thread t( runCmd, std::move(theCmd), std::move(buf), false, true );
 		t.detach();
 		
 		//Make return message and return it

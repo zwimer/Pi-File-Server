@@ -1,7 +1,7 @@
 #ifndef CMD_HPP
 #define CMD_HPP
 
-#include "main.hpp"
+#include <string>
 
 //A wrapper to the generic AbstractCommand class.
 //This class exists so that arrays of AbstractCommand<T>*s
