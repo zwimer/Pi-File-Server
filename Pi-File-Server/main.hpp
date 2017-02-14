@@ -81,14 +81,14 @@ template <class T> class __SubClass<T, T> { public: enum { valid = 0 }; };
 //Prevents something from running multiple times
 //Is thread-safe, but should by principle only be
 //used by functions called before threading occurs
-#define RUN_ONCE { \
-	static bool neverRun = true; \
-	static std::mutex m; m.lock(); \
+#define RUN_ONCE {                      \
+	static bool neverRun = true;        \
+	static std::mutex m; m.lock();      \
 	std::string s(__PRETTY_FUNCTION__); \
-	s += "() should only run once!"; \
-	Assert(neverRun, s.c_str()); \
-	neverRun = false; \
-	m.unlock(); \
+	s += "() should only run once!";    \
+	Assert(neverRun, s.c_str());        \
+	neverRun = false;                   \
+	m.unlock();                         \
 } 
 
 
@@ -114,10 +114,10 @@ template <class T> class __SubClass<T, T> { public: enum { valid = 0 }; };
 
 
 //Helpful typedef
-typedef boost::interprocess::allocator<int, 
-			boost::interprocess::managed_shared_memory::segment_manager
-			> ShmemAllocator;
-typedef boost::interprocess::set<int, std::less<int>, ShmemAllocator> IntSet;
+typedef boost::interprocess::allocator
+		< int, boost::interprocess::managed_shared_memory::segment_manager >
+		ShmemAllocator;
+typedef boost::interprocess::set< int, std::less<int>, ShmemAllocator > IntSet;
 
 //For simplicity
 typedef unsigned int uint;
